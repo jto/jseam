@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>JS Seam carving</title>
+		<script src="seam.js" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css" media="screen">
+			canvas{
+				border: solid 1px #515151;
+				display: block;
+				margin: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<canvas id="refImg" width="500" height="500"></canvas>
+		<canvas id="seamcanvas" width="500" height="500"></canvas>
+		
+		<script type="text/javascript" charset="utf-8">
+			(function(){
+							
+				
+				
+				var $ = document.querySelectorAll;
+				document.addEventListener('DOMContentLoaded', function(){
+					var orgCanvas = document.querySelector('#refImg');
+					var orgCtx = orgCanvas.getContext('2d');
+					
+					var seamCanvas = document.querySelector('#seamcanvas');
+					var seamCtx = seamcanvas.getContext('2d');
+					
+					var originalImage = new Image();
+					originalImage.src = "images/dolphin.jpg";
+					originalImage.addEventListener('load', function(){
+						orgCanvas.height=this.height;
+						orgCanvas.width=this.width;	
+						seamCanvas.height=this.height;
+						seamCanvas.width=this.width;		
+						orgCtx.drawImage(this, 0,0);
+						
+						//get the image data from the original image
+						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
+						seamCtx.putImageData(imageData,0,0);
+						
+						//original, buffer (for internal use), output
+						var tmp = seamCtx.createImageData(this.width, this.height);
+						var out = seamCtx.createImageData(this.width, this.height);
+		
+						var s = new SeamCarving(imageData, tmp, out);
+						seamCtx.putImageData(s.debug(1), 0,0);					
+					});
+				});
+			})()
+		</script>
+	</body>
+</html>
