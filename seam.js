@@ -2,11 +2,9 @@
 * Seam carving -- refactored from
 * http://labs.pimsworld.org/wp-content/uploads/2009/04/demo-content-aware-image-resizing-2/
 */
-var SeamCarving = function(orgImgData, tmp, out){
+var SeamCarving = function(orgImgData, out){
 	
 	this.original = orgImgData;
-	//R = luminance map, G = energy map, B = energy map, A = seam map
-	this.tmp = tmp;
 	//resized image
 	this.out = out;
 	
@@ -182,19 +180,7 @@ SeamCarving.prototype = {
 		oldIndex = 0, 
 		newIndex = 0;
 		var numberFound = 0;
-		/*
-		while(oldIndex < srcImgDataData.length){
-			if (srcSeamMapData[oldIndex + 3]  > 0) {
-				resultImageData[newIndex] =    srcImgDataData[oldIndex];
-				resultImageData[newIndex+1] =  srcImgDataData[oldIndex+1];
-				resultImageData[newIndex+2] =  srcImgDataData[oldIndex+2];
-				resultImageData[newIndex+3] =  srcImgDataData[oldIndex+3];
-				newIndex += 4;
-			}
-			oldIndex += 4;
-		}
-		*/
-		
+				
 		for(i = 0; i < srcImgDataData.length; i+=4)
 			if(srcSeamMapData[i + 3]  > 0)
 				for(j = 0; j < 4; j++)
@@ -205,13 +191,9 @@ SeamCarving.prototype = {
 	},
 	
 	resize: function(){
-		
-		while(this._currentdata.length > this.out.data.length){
+		while(this._currentdata.length > this.out.data.length)
 			this._process();
-		}
-			
-		for(i = 0; i < this.out.data.length; i++){
+		for(i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
-		}
 	}
 }
