@@ -50,6 +50,7 @@ SeamCarving.prototype = {
 		minEnergy,
 		
 		p;
+		
 		for (pixel = 0; pixel < data.length; pixel += 4) {
 				
 			topLeft =      pixel - (width + 1) * 4;
@@ -98,9 +99,9 @@ SeamCarving.prototype = {
 		
 	// Copy intermediate image to dest
 	// 0 = grayscale,
-	// 1 = energy
-	// 2 = Sobel
-	// 3 = seammap
+	// 1 = energy,
+	// 2 = Sobel,
+	// 3 = seam
 	debug: function(dest, mod){
 		var tmp = this.tmp.data;
 		var ddata = dest.data;
@@ -181,5 +182,9 @@ SeamCarving.prototype = {
 			oldIndex += 4;
 		}
 		return this.out;
+	},
+	
+	resize: function(nbSeams){
+		
 	}
 }

@@ -22,7 +22,7 @@
 		<script type="text/javascript" charset="utf-8">
 			(function(){
 							
-				
+				//console.profile();
 				
 				var $ = document.querySelectorAll;
 				document.addEventListener('DOMContentLoaded', function(){
@@ -48,26 +48,24 @@
 						sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;		
 						orgCtx.drawImage(this, 0,0);
 						
-						//get the image data from the original image
 						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
-						//buffer (for internal use)
 						var tmp = seamCtx.createImageData(this.width, this.height);
-						//final image
 						var out = seamCtx.createImageData(this.width - 1, this.height);
-		
-						//debug
 						var d = seamCtx.createImageData(this.width, this.height);
 		
 						var s = new SeamCarving(imageData, tmp, out);
-						
-						//grayCtx.putImageData(s.debug(d, 0), 0,0);
-						//sobelCtx.putImageData(s.debug(d, 2), 0,0);
+
+						grayCtx.putImageData(s.debug(d, 0), 0,0);
+						sobelCtx.putImageData(s.debug(d, 2), 0,0);
 																							
 						s.seamMap();
 						s.sliceSeam();
-						//energyCtx.putImageData(s.debug(d, 1), 0,0);
+						
+						energyCtx.putImageData(s.debug(d, 1), 0,0);
 						
 						seamCtx.putImageData(out, 0,0);
+						
+						//console.profileEnd();
 					});
 				});
 			})()
