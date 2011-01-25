@@ -29,7 +29,6 @@ SeamCarving.prototype = {
 		
 		this._desaturate();
 		this._sobelAndEnergy();
-		this._seamMap();
 	},
 	
 	/**
@@ -135,8 +134,8 @@ SeamCarving.prototype = {
 
 		//search on last row
 		for (x = 0; x < currentWidth ; x++) {
-			pixel = ( (currentHeight - 1) * currentWidth + x    ) * 4;
-			if (pseudoImgData[pixel+1] < tmpEnergy){
+			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
+			if (pseudoImgData[pixel+3] > 0 && pseudoImgData[pixel+1] < tmpEnergy){
 				minEnergyPosition = pixel;
 				tmpEnergy = pseudoImgData[pixel+1];
 			}
@@ -144,17 +143,15 @@ SeamCarving.prototype = {
 		
 		pseudoImgData[minEnergyPosition + 3] = 0;
 
-		lastMinEnergyPosition = minEnergyPosition - 4;
-
 		for (y = currentHeight - 1; y > 0 ; y--) {
 			topLeftPosition =      minEnergyPosition - currentWidth * 4 - 4;
 			topMiddlePosition =    minEnergyPosition - currentWidth * 4;
 			topRightPosition =     minEnergyPosition - currentWidth * 4 + 4;
 
-			topLeftValue =      pseudoImgData[topLeftPosition   + 1];
-			topMiddleValue =    pseudoImgData[topMiddlePosition + 1];
-			topRightValue =     pseudoImgData[topRightPosition  + 1];
-
+			topLeftValue =      pseudoImgData[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + 1] : Number.MAX_VALUE;
+			topMiddleValue =    pseudoImgData[topMiddlePosition + 3] > 0 ? pseudoImgData[topMiddlePosition + 1] : Number.MAX_VALUE;			
+			topRightValue =     pseudoImgData[topRightPosition  + 3] > 0 ? pseudoImgData[topRightPosition  + 1] : Number.MAX_VALUE;
+			
 			minEnergyValue = topMiddleValue;
 			minEnergyPosition = topMiddlePosition;
 
@@ -166,6 +163,10 @@ SeamCarving.prototype = {
 			if (topRightValue < minEnergyValue && (((topMiddlePosition + 4) % (currentWidth)) > 0)){
 				minEnergyValue = topRightValue;
 				minEnergyPosition = topRightPosition;
+			}
+			
+			if(pseudoImgData[minEnergyPosition + 3] == 0){
+				console.error("This pixel is already in a seam (TOD: border problem)");
 			}
 			
 			pseudoImgData[minEnergyPosition + 3] = 0;
@@ -187,40 +188,50 @@ SeamCarving.prototype = {
 	},
 	
 	_addSeam: function(){
-		var srcImgDataData = this._currentdata,
+		var srcImgData = this._currentdata,
 		srcSeamMapData = this._tmp,
 		resultImageData = [];
 		
-		var left, right;
+		var left, right, m, ind;
 		
-		for(i = 0; i < srcImgDataData.length; i+=4){
-			
-			if(!srcSeamMapData[i + 3]  > 0){
-				for(j = 0; j < 4; j++){
-					var ind = i + j;
-					left = (ind - 4) > 0 ? srcImgDataData[ind-4] : srcImgDataData[ind];
-					right = (ind + 4) < srcImgDataData.length ? srcImgDataData[ind + 4] : srcImgDataData[ind];
-					var m = (left + right + srcImgDataData[ind]) / 3;
-					resultImageData.push(m)
+		for(i = 0; i < srcImgData.length; i+=4){
+			//We found a SEAM!
+			if(!(srcSeamMapData[i + 3]  > 0)){
+				for(j = 0; j < 3; j++){
+					ind = i + j;
+					left = (ind - 4) > 0 ? srcImgData[ind - 4] : srcImgData[ind];
+					right = (ind + 4) < srcImgData.length ? srcImgData[ind + 4] : srcImgData[ind];
+					m = (left + right + srcImgData[ind]) / 3;
+					resultImageData.push(m);
 				}
+				resultImageData.push(255); //alpha
 			}
 			
 			for(j = 0; j < 4; j++)
-				resultImageData.push(srcImgDataData[i + j])
+				resultImageData.push(srcImgData[i + j])
 		}
 		
-		this._currentWidth++;
+		this._currentWidth = this.out.width;
 		this._currentdata = resultImageData;
 	},
 	
 	resize: function(){
 		
-		var f = (this.original.data.length > this.out.data.length) ? this._sliceSeam : this._addSeam;
-		while(this._currentdata.length != this.out.data.length){
+		//smaller ?
+		while(this._currentdata.length > this.out.data.length){
 			this._process();
-			f.apply(this);
+			this._seamMap();
+			this._sliceSeam();
 		}
 		
+		if(this.original.width < this.out.width){
+			this._process();
+			for(i = 0; i < this.out.width - this.original.width; i++)
+				this._seamMap();
+			this._addSeam();
+		}
+		
+		//copy result
 		for(i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
 	}
