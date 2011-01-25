@@ -8,8 +8,16 @@
 			canvas{
 				border: solid 1px #515151;
 				margin: 20px;
+				display: block;
 			}
 			
+			#grayscale, #sobel, #energy{
+				display: none;
+			}
+			
+			#grayscale{
+				display: block;
+			}
 		</style>
 	</head>
 	<body>
@@ -42,22 +50,24 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = 100;
+					var NB_SLICE = 50;
 					
-					originalImage.src = "images/nasa.jpg";
+					originalImage.src = "images/dolphin.jpg";
 					originalImage.addEventListener('load', function(){
 						//console.profile();
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
 						sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;		
+						
+						seamCanvas.width = this.width + NB_SLICE;
+						
 						orgCtx.drawImage(this, 0,0);
 						
 						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
-						var out = seamCtx.createImageData(this.width - NB_SLICE, this.height);
-						
-						var d = seamCtx.createImageData(this.width - NB_SLICE + 1, this.height);
-		
-						var s = new SeamCarving(imageData, out);
-																	
+						var out = seamCtx.createImageData(this.width + NB_SLICE, this.height);
+
+						var d = seamCtx.createImageData(this.width + (NB_SLICE > 0 ? (NB_SLICE - 1) : NB_SLICE + 1), this.height);
+												
+						var s = new SeamCarving(imageData, out);						
 						s.resize();
 						
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
@@ -65,7 +75,7 @@
 						energyCtx.putImageData(s.debug(d, 1), 0,0);
 						seamCtx.putImageData(s.out, 0,0);
 						
-						orgCanvas.style.width = this.width - NB_SLICE + "px";
+						//orgCanvas.style.width = this.width - NB_SLICE + "px";
 						//console.profileEnd();
 					});
 				});

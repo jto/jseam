@@ -4,6 +4,7 @@
 */
 var SeamCarving = function(orgImgData, out){
 	
+	//original imaged
 	this.original = orgImgData;
 	//resized image
 	this.out = out;
@@ -11,7 +12,7 @@ var SeamCarving = function(orgImgData, out){
 	this._currentWidth = this.original.width;
 	this._currentHeight = this.original.height;
 	this._currentdata = this.original.data; // current resize step RGBA
-	this._tmp = [];			// current step gray + energy + sobel + seam
+	this._tmp = [];	// current step gray + energy + sobel + seam
 	
 };
 
@@ -29,7 +30,6 @@ SeamCarving.prototype = {
 		this._desaturate();
 		this._sobelAndEnergy();
 		this._seamMap();
-		this._sliceSeam();
 	},
 	
 	/**
@@ -173,13 +173,9 @@ SeamCarving.prototype = {
 	},
 	
 	_sliceSeam: function(){
-		//-2 and -1 must be set according to the factor
 		var srcImgDataData = this._currentdata,
 		srcSeamMapData = this._tmp,
-		resultImageData = [],
-		oldIndex = 0, 
-		newIndex = 0;
-		var numberFound = 0;
+		resultImageData = [];
 				
 		for(i = 0; i < srcImgDataData.length; i+=4)
 			if(srcSeamMapData[i + 3]  > 0)
@@ -190,9 +186,41 @@ SeamCarving.prototype = {
 		this._currentdata = resultImageData;
 	},
 	
+	_addSeam: function(){
+		var srcImgDataData = this._currentdata,
+		srcSeamMapData = this._tmp,
+		resultImageData = [];
+		
+		var left, right;
+		
+		for(i = 0; i < srcImgDataData.length; i+=4){
+			
+			if(!srcSeamMapData[i + 3]  > 0){
+				for(j = 0; j < 4; j++){
+					var ind = i + j;
+					left = (ind - 4) > 0 ? srcImgDataData[ind-4] : srcImgDataData[ind];
+					right = (ind + 4) < srcImgDataData.length ? srcImgDataData[ind + 4] : srcImgDataData[ind];
+					var m = (left + right + srcImgDataData[ind]) / 3;
+					resultImageData.push(m)
+				}
+			}
+			
+			for(j = 0; j < 4; j++)
+				resultImageData.push(srcImgDataData[i + j])
+		}
+		
+		this._currentWidth++;
+		this._currentdata = resultImageData;
+	},
+	
 	resize: function(){
-		while(this._currentdata.length > this.out.data.length)
+		
+		var f = (this.original.data.length > this.out.data.length) ? this._sliceSeam : this._addSeam;
+		while(this._currentdata.length != this.out.data.length){
 			this._process();
+			f.apply(this);
+		}
+		
 		for(i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
 	}
