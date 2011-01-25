@@ -9,27 +9,38 @@ var SeamCarving = function(orgImgData, tmp, out){
 	this.tmp = tmp;
 	//resized image
 	this.out = out;
-	this.init();
+	
+	this._currentWidth = this.original.width;
+	this._currentHeight = this.original.height;
+	this._currentdata = this.original.data; // current resize step RGBA
+	this._tmp = [];			// current step gray + energy + sobel + seam
+	
 };
 
 SeamCarving.prototype = {
-	init: function(){
-		var tmp = this.tmp.data;
-		//init alpha channel
-		for(pixel = 0; pixel < tmp.length; pixel += 4)
-			tmp[pixel + 3] = 255;
+	_process: function(){
+		var tmp = this._tmp;
+		var l = this._currentdata.length;
 		
-		this.desaturate();
-		this.sobelAndEnergy();
+		//init tmp (black, full opacity)
+		for(pixel = 0; pixel < l; pixel += 4){
+			tmp[pixel] = tmp[pixel + 1] = tmp[pixel + 2] = 0;
+			tmp[pixel + 3] = 255;
+		}
+		
+		this._desaturate();
+		this._sobelAndEnergy();
+		this._seamMap();
+		this._sliceSeam();
 	},
 	
 	/**
 	* Create grayscale image
 	*/
-	desaturate: function(){
+	_desaturate: function(){
 		var pixel;
-		var outImgData = this.tmp.data;
-		var srcImgData = this.original.data;
+		var outImgData = this._tmp;
+		var srcImgData = this._currentdata;
 	
 		for (pixel = 0; pixel < srcImgData.length; pixel += 4)
 			outImgData[pixel] = (299 * srcImgData[pixel] + 587 * srcImgData[pixel + 1] + 114 * srcImgData[pixel + 2])/1000;
@@ -38,10 +49,10 @@ SeamCarving.prototype = {
 	/**
 	* build sobel and energy map
 	*/
-	sobelAndEnergy: function(){
-		var width = this.tmp.width, 
-		height = this.tmp.height,
-		data = this.tmp.data,
+	_sobelAndEnergy: function(){
+		var width = this._currentWidth, 
+		height = this.__currentHeight,
+		data = this._tmp,
      
 		sobelPixelH, sobelPixelV, sobelResult,
 		topLeft, topMiddle, topRight, bottomLeft, bottomMiddle, bottomRight, leftMiddle, rightMiddle,
@@ -103,7 +114,7 @@ SeamCarving.prototype = {
 	// 2 = Sobel,
 	// 3 = seam
 	debug: function(dest, mod){
-		var tmp = this.tmp.data;
+		var tmp = this._tmp;
 		var ddata = dest.data;
 		for(pixel = 0; pixel < tmp.length; pixel += 4){
 			ddata[pixel] = ddata[pixel + 1] = ddata[pixel + 2] = tmp[pixel + mod];
@@ -112,12 +123,12 @@ SeamCarving.prototype = {
 		return dest;
 	},
 	
-	seamMap:function(){
+	_seamMap:function(){
 		var minEnergyPosition,
 		tmpEnergy = Number.MAX_VALUE,
-		currentWidth = this.tmp.width,
-		currentHeight = this.tmp.height,
-		pseudoImgData = this.tmp.data,
+		currentWidth = this._currentWidth,
+		currentHeight = this._currentHeight,
+		pseudoImgData = this._tmp,
 		topLeftPosition, topMiddlePosition, topRightPosition,topLeftValue, topMiddleValue, topRightValue,
 		minEnergyValue,
 
@@ -163,14 +174,15 @@ SeamCarving.prototype = {
 		}
 	},
 	
-	sliceSeam: function(){
+	_sliceSeam: function(){
 		//-2 and -1 must be set according to the factor
-		var srcImgDataData = this.original.data,
-		srcSeamMapData = this.tmp.data,
-		resultImageData = this.out.data,
+		var srcImgDataData = this._currentdata,
+		srcSeamMapData = this._tmp,
+		resultImageData = [],
 		oldIndex = 0, 
 		newIndex = 0;
 		var numberFound = 0;
+		/*
 		while(oldIndex < srcImgDataData.length){
 			if (srcSeamMapData[oldIndex + 3]  > 0) {
 				resultImageData[newIndex] =    srcImgDataData[oldIndex];
@@ -181,10 +193,25 @@ SeamCarving.prototype = {
 			}
 			oldIndex += 4;
 		}
-		return this.out;
+		*/
+		
+		for(i = 0; i < srcImgDataData.length; i+=4)
+			if(srcSeamMapData[i + 3]  > 0)
+				for(j = 0; j < 4; j++)
+					resultImageData.push(srcImgDataData[i + j])
+		
+		this._currentWidth--;
+		this._currentdata = resultImageData;
 	},
 	
-	resize: function(nbSeams){
+	resize: function(){
 		
+		while(this._currentdata.length > this.out.data.length){
+			this._process();
+		}
+			
+		for(i = 0; i < this.out.data.length; i++){
+			this.out.data[i] = this._currentdata[i];
+		}
 	}
 }

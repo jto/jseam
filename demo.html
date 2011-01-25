@@ -42,7 +42,10 @@
 					var seamCtx = seamcanvas.getContext('2d');
 					
 					var originalImage = new Image();
-					originalImage.src = "images/dolphin.jpg";
+					
+					var NB_SLICE = 100;
+					
+					originalImage.src = "images/nasa.jpg";
 					originalImage.addEventListener('load', function(){
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
 						sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;		
@@ -50,21 +53,20 @@
 						
 						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
 						var tmp = seamCtx.createImageData(this.width, this.height);
-						var out = seamCtx.createImageData(this.width - 1, this.height);
+						var out = seamCtx.createImageData(this.width - NB_SLICE, this.height);
 						var d = seamCtx.createImageData(this.width, this.height);
 		
 						var s = new SeamCarving(imageData, tmp, out);
-
+																	
+						s.resize();
+						
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
 						sobelCtx.putImageData(s.debug(d, 2), 0,0);
-																							
-						s.seamMap();
-						s.sliceSeam();
-						
 						energyCtx.putImageData(s.debug(d, 1), 0,0);
+						seamCtx.putImageData(s.out, 0,0);
 						
-						seamCtx.putImageData(out, 0,0);
 						
+						orgCanvas.style.width = this.width - NB_SLICE + "px";
 						//console.profileEnd();
 					});
 				});
