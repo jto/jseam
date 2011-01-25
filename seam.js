@@ -5,16 +5,20 @@
 var SeamCarving = function(orgImgData, tmp, out){
 	
 	this.original = orgImgData;
-	//R = luminance map, G = borders map, B = energy map, A = nothing
+	//R = luminance map, G = energy map, B = energy map, A = seam map
 	this.tmp = tmp;
 	//resized image
 	this.out = out;
-	
 	this.init();
 };
 
 SeamCarving.prototype = {
 	init: function(){
+		var tmp = this.tmp.data;
+		//init alpha channel
+		for(pixel = 0; pixel < tmp.length; pixel += 4)
+			tmp[pixel + 3] = 255;
+		
 		this.desaturate();
 		this.sobelAndEnergy();
 	},
@@ -88,22 +92,94 @@ SeamCarving.prototype = {
 			if (minEnergy < 0) minEnergy = 0;*/
 			
 			data[pixel + 1] = Math.round(minEnergy);
-			data[pixel + 2] = sobelResult * 30;
+			data[pixel + 2] = sobelResult * 20; //random coef
 		}
 	},
 		
+	// Copy intermediate image to dest
 	// 0 = grayscale,
-	// 1 = sobel
-	// 2 = energy
-	debug: function(mod){
+	// 1 = energy
+	// 2 = Sobel
+	// 3 = seammap
+	debug: function(dest, mod){
 		var tmp = this.tmp.data;
-		var out = this.out.data;
-		
-		for(pixel = mod; pixel < tmp.length; pixel += 4){
-			out[pixel] = out[pixel + 1] = out[pixel + 2] = tmp[pixel];
-			out[pixel + 3] = 255;
+		var ddata = dest.data;
+		for(pixel = 0; pixel < tmp.length; pixel += 4){
+			ddata[pixel] = ddata[pixel + 1] = ddata[pixel + 2] = tmp[pixel + mod];
+			ddata[pixel + 3] = tmp[pixel + 3];
+		}
+		return dest;
+	},
+	
+	seamMap:function(){
+		var minEnergyPosition,
+		tmpEnergy = Number.MAX_VALUE,
+		currentWidth = this.tmp.width,
+		currentHeight = this.tmp.height,
+		pseudoImgData = this.tmp.data,
+		topLeftPosition, topMiddlePosition, topRightPosition,topLeftValue, topMiddleValue, topRightValue,
+		minEnergyValue,
+
+		pixel,
+		x, y;
+
+		//search on last row
+		for (x = 0; x < currentWidth ; x++) {
+			pixel = ( (currentHeight - 1) * currentWidth + x    ) * 4;
+			if (pseudoImgData[pixel+1] < tmpEnergy){
+				minEnergyPosition = pixel;
+				tmpEnergy = pseudoImgData[pixel+1];
+			}
 		}
 		
+		pseudoImgData[minEnergyPosition + 3] = 0;
+
+		lastMinEnergyPosition = minEnergyPosition - 4;
+
+		for (y = currentHeight - 1; y > 0 ; y--) {
+			topLeftPosition =      minEnergyPosition - currentWidth * 4 - 4;
+			topMiddlePosition =    minEnergyPosition - currentWidth * 4;
+			topRightPosition =     minEnergyPosition - currentWidth * 4 + 4;
+
+			topLeftValue =      pseudoImgData[topLeftPosition   + 1];
+			topMiddleValue =    pseudoImgData[topMiddlePosition + 1];
+			topRightValue =     pseudoImgData[topRightPosition  + 1];
+
+			minEnergyValue = topMiddleValue;
+			minEnergyPosition = topMiddlePosition;
+
+			//Low energy + detect the image left and right borders
+			if (topLeftValue < minEnergyValue && ((topMiddlePosition % (currentWidth)) > 0)){
+				minEnergyValue = topMiddleValue;
+				minEnergyPosition = topLeftPosition;
+			}
+			if (topRightValue < minEnergyValue && (((topMiddlePosition + 4) % (currentWidth)) > 0)){
+				minEnergyValue = topRightValue;
+				minEnergyPosition = topRightPosition;
+			}
+			
+			pseudoImgData[minEnergyPosition + 3] = 0;
+		}
+	},
+	
+	sliceSeam: function(){
+		//-2 and -1 must be set according to the factor
+		var srcImgDataData = this.original.data,
+		srcSeamMapData = this.tmp.data,
+		resultImageData = this.out.data,
+		oldIndex = 0, 
+		newIndex = 0;
+		var numberFound = 0;
+		while(oldIndex < srcImgDataData.length){
+			if (srcSeamMapData[oldIndex + 3]  > 0) {
+				resultImageData[newIndex] =    srcImgDataData[oldIndex];
+				resultImageData[newIndex+1] =  srcImgDataData[oldIndex+1];
+				resultImageData[newIndex+2] =  srcImgDataData[oldIndex+2];
+				resultImageData[newIndex+3] =  srcImgDataData[oldIndex+3];
+				newIndex += 4;
+			}
+			oldIndex += 4;
+		}
 		return this.out;
 	}
 }

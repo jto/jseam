@@ -7,7 +7,6 @@
 		<style type="text/css" media="screen">
 			canvas{
 				border: solid 1px #515151;
-				display: block;
 				margin: 20px;
 			}
 		</style>
@@ -15,6 +14,9 @@
 	<body>
 		
 		<canvas id="refImg" width="500" height="500"></canvas>
+		<canvas id="grayscale" width="500" height="500"></canvas>
+		<canvas id="sobel" width="500" height="500"></canvas>
+		<canvas id="energy" width="500" height="500"></canvas>
 		<canvas id="seamcanvas" width="500" height="500"></canvas>
 		
 		<script type="text/javascript" charset="utf-8">
@@ -27,28 +29,45 @@
 					var orgCanvas = document.querySelector('#refImg');
 					var orgCtx = orgCanvas.getContext('2d');
 					
+					var grayCanvas = document.querySelector('#grayscale');
+					var grayCtx = grayCanvas.getContext('2d');
+					
+					var sobelCanvas = document.querySelector('#sobel');
+					var sobelCtx = sobelCanvas.getContext('2d');
+					
+					var energyCanvas = document.querySelector('#energy');
+					var energyCtx = energyCanvas.getContext('2d');
+					
 					var seamCanvas = document.querySelector('#seamcanvas');
 					var seamCtx = seamcanvas.getContext('2d');
 					
 					var originalImage = new Image();
 					originalImage.src = "images/dolphin.jpg";
 					originalImage.addEventListener('load', function(){
-						orgCanvas.height=this.height;
-						orgCanvas.width=this.width;	
-						seamCanvas.height=this.height;
-						seamCanvas.width=this.width;		
+						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
+						sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;		
 						orgCtx.drawImage(this, 0,0);
 						
 						//get the image data from the original image
 						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
-						seamCtx.putImageData(imageData,0,0);
-						
-						//original, buffer (for internal use), output
+						//buffer (for internal use)
 						var tmp = seamCtx.createImageData(this.width, this.height);
-						var out = seamCtx.createImageData(this.width, this.height);
+						//final image
+						var out = seamCtx.createImageData(this.width - 1, this.height);
+		
+						//debug
+						var d = seamCtx.createImageData(this.width, this.height);
 		
 						var s = new SeamCarving(imageData, tmp, out);
-						seamCtx.putImageData(s.debug(1), 0,0);					
+						
+						//grayCtx.putImageData(s.debug(d, 0), 0,0);
+						//sobelCtx.putImageData(s.debug(d, 2), 0,0);
+																							
+						s.seamMap();
+						s.sliceSeam();
+						//energyCtx.putImageData(s.debug(d, 1), 0,0);
+						
+						seamCtx.putImageData(out, 0,0);
 					});
 				});
 			})()
