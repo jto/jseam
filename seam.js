@@ -249,9 +249,9 @@ SeamCarving.prototype = {
 		if(this.original.width < this.out.width){
 			this._process();
 			var l = this._seamsList();
-			this._seamMap(l[0]);
-			//for(i = 0; i < this.out.width - this.original.width; i++)
-			//	this._seamMap();
+			for(var i = 0; i < (this.out.width - this.original.width); i++){
+				this._seamMap(l[i]);
+			}
 			this._addSeam();
 		}
 		
