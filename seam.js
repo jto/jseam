@@ -3,7 +3,6 @@
 * http://labs.pimsworld.org/wp-content/uploads/2009/04/demo-content-aware-image-resizing-2/
 */
 var SeamCarving = function(orgImgData, out){
-	
 	//original imaged
 	this.original = orgImgData;
 	//resized image
@@ -13,16 +12,16 @@ var SeamCarving = function(orgImgData, out){
 	this._currentHeight = this.original.height;
 	this._currentdata = this.original.data; // current resize step RGBA
 	this._tmp = [];	// current step gray + energy + sobel + seam
-	
 };
 
 SeamCarving.prototype = {
+		
 	_process: function(){
 		var tmp = this._tmp;
 		var l = this._currentdata.length;
 		
 		//init tmp (black, full opacity)
-		for(pixel = 0; pixel < l; pixel += 4){
+		for(var pixel = 0; pixel < l; pixel += 4){
 			tmp[pixel] = tmp[pixel + 1] = tmp[pixel + 2] = 0;
 			tmp[pixel + 3] = 255;
 		}
@@ -113,7 +112,7 @@ SeamCarving.prototype = {
 	debug: function(dest, mod){
 		var tmp = this._tmp;
 		var ddata = dest.data;
-		for(pixel = 0; pixel < tmp.length; pixel += 4){
+		for(var pixel = 0; pixel < tmp.length; pixel += 4){
 			ddata[pixel] = ddata[pixel + 1] = ddata[pixel + 2] = tmp[pixel + mod];
 			ddata[pixel + 3] = tmp[pixel + 3];
 		}
@@ -123,7 +122,7 @@ SeamCarving.prototype = {
 	_seamMap:function(seam){
 		var data = seam.pixels;
 		var tmp = this._tmp;
-		for(i = 0; i < data.length; i++)
+		for(var i = 0; i < data.length; i++)
 			tmp[data[i] + 3] = 0;
 	},
 	
@@ -140,8 +139,9 @@ SeamCarving.prototype = {
 		pixels = [],
 		x, y;
 
+		var seamPixels = this._seamsPixels;
 		minEnergyPosition = from;
-		tmpEnergy = pseudoImgData[from+1];
+		tmpEnergy = pseudoImgData[from + 1];
 		
 		pixels.push(minEnergyPosition);
 			
@@ -150,9 +150,10 @@ SeamCarving.prototype = {
 			topMiddlePosition =    minEnergyPosition - currentWidth * 4;
 			topRightPosition =     minEnergyPosition - currentWidth * 4 + 4;
 
-			topLeftValue =      pseudoImgData[topLeftPosition   + 1];
-			topMiddleValue =    pseudoImgData[topMiddlePosition + 1];			
-			topRightValue =     pseudoImgData[topRightPosition  + 1];
+			//avoid overlapping as much as we can
+			topLeftValue =      seamPixels[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + 1] : Number.MAX_VALUE;
+			topMiddleValue =    seamPixels[topMiddlePosition   + 3] > 0 ? pseudoImgData[topMiddlePosition + 1] : Number.MAX_VALUE;			
+			topRightValue =     seamPixels[topRightPosition   + 3] > 0 ? pseudoImgData[topRightPosition  + 1] : Number.MAX_VALUE;
 			
 			minEnergyValue = topMiddleValue;
 			minEnergyPosition = topMiddlePosition;
@@ -169,30 +170,44 @@ SeamCarving.prototype = {
 			
 			tmpEnergy += minEnergyValue;
 			pixels.push(minEnergyPosition);
+			
+			if(minEnergyValue == Number.MAX_VALUE){
+				//ignore overlapping seams
+				return null;
+			}
+			
+			//store seams position
+			seamPixels[minEnergyPosition + 3] = 0;
 		}
+		
 		return { 'pixels' : pixels, 'energy' : tmpEnergy };
 	},
 	
 	_seamsList: function(){
+		
+		this._seamsPixels = [];
+		for(var i = 0; i < this._currentdata.length; i++)
+			this._seamsPixels[i] = 255;
+		
 		var currentWidth = this._currentWidth,
 		currentHeight = this._currentHeight,
 		pixel = 0;
 		
 		var seams = [];
-		for (x = 0; x < currentWidth ; x++) {
-			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
-			seams.push(this._getSeam(pixel));
+		for(var x = 0; x < currentWidth ; x++) {
+			//begin one seam from the left, ne seam from the right, etc...
+			var alternatex = (x % 2 == 0) ? x : currentWidth - x;
+			pixel = ((currentHeight - 1) * currentWidth + alternatex) * 4;
+			var s = this._getSeam(pixel);
+			if(s != null)
+				seams.push(s);
 		}
 		
 		//sort seams by energy
-		seams.sort(function(s1, s2){
-			if(s1.energy < s2.energy)
-				return -1;
-			else
-				return 1;
+		return seams.sort(function(s1, s2){
+			if(s1.energy < s2.energy) return -1;
+			else return 1;
 		});
-				
-		return seams;
 	},
 	
 	_sliceSeam: function(){
@@ -200,9 +215,9 @@ SeamCarving.prototype = {
 		srcSeamMapData = this._tmp,
 		resultImageData = [];
 				
-		for(i = 0; i < srcImgDataData.length; i+=4)
+		for(var i = 0; i < srcImgDataData.length; i+=4)
 			if(srcSeamMapData[i + 3]  > 0)
-				for(j = 0; j < 4; j++)
+				for(var j = 0; j < 4; j++)
 					resultImageData.push(srcImgDataData[i + j])
 		
 		this._currentWidth--;
@@ -216,10 +231,10 @@ SeamCarving.prototype = {
 		
 		var left, right, m, ind;
 		
-		for(i = 0; i < srcImgData.length; i+=4){
+		for(var i = 0; i < srcImgData.length; i+=4){
 			//We found a SEAM!
 			if(!(srcSeamMapData[i + 3]  > 0)){
-				for(j = 0; j < 3; j++){
+				for(var j = 0; j < 3; j++){
 					ind = i + j;
 					left = (ind - 4) > 0 ? srcImgData[ind - 4] : srcImgData[ind];
 					right = (ind + 4) < srcImgData.length ? srcImgData[ind + 4] : srcImgData[ind];
@@ -229,7 +244,7 @@ SeamCarving.prototype = {
 				resultImageData.push(255); //alpha
 			}
 			
-			for(j = 0; j < 4; j++)
+			for(var j = 0; j < 4; j++)
 				resultImageData.push(srcImgData[i + j])
 		}
 		
@@ -241,22 +256,23 @@ SeamCarving.prototype = {
 		//smaller ?
 		while(this._currentdata.length > this.out.data.length){
 			this._process();
-			this._seamMap(this._seamsList()[0]);
+			var l = this._seamsList();
+			this._seamMap(l[0]);
 			this._sliceSeam();
 		}
 		
 		//bigger
+		var diff = this.out.width - this.original.width;
 		if(this.original.width < this.out.width){
 			this._process();
 			var l = this._seamsList();
-			for(var i = 0; i < (this.out.width - this.original.width); i++){
+			for(var i = 0; (i < diff) && (i < l.length); i++)
 				this._seamMap(l[i]);
-			}
 			this._addSeam();
 		}
 		
 		//copy result
-		for(i = 0; i < this.out.data.length; i++)
+		for(var i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
 	}
 }
