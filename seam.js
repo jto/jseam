@@ -120,7 +120,14 @@ SeamCarving.prototype = {
 		return dest;
 	},
 	
-	_seamMap:function(){
+	_seamMap:function(seam){
+		var data = seam.pixels;
+		var tmp = this._tmp;
+		for(i = 0; i < data.length; i++)
+			tmp[data[i] + 3] = 0;
+	},
+	
+	_getSeam: function(from) {
 		var minEnergyPosition,
 		tmpEnergy = Number.MAX_VALUE,
 		currentWidth = this._currentWidth,
@@ -130,27 +137,22 @@ SeamCarving.prototype = {
 		minEnergyValue,
 
 		pixel,
+		pixels = [],
 		x, y;
 
-		//search on last row
-		for (x = 0; x < currentWidth ; x++) {
-			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
-			if (pseudoImgData[pixel+3] > 0 && pseudoImgData[pixel+1] < tmpEnergy){
-				minEnergyPosition = pixel;
-				tmpEnergy = pseudoImgData[pixel+1];
-			}
-		}
+		minEnergyPosition = from;
+		tmpEnergy = pseudoImgData[from+1];
 		
-		pseudoImgData[minEnergyPosition + 3] = 0;
-
+		pixels.push(minEnergyPosition);
+			
 		for (y = currentHeight - 1; y > 0 ; y--) {
 			topLeftPosition =      minEnergyPosition - currentWidth * 4 - 4;
 			topMiddlePosition =    minEnergyPosition - currentWidth * 4;
 			topRightPosition =     minEnergyPosition - currentWidth * 4 + 4;
 
-			topLeftValue =      pseudoImgData[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + 1] : Number.MAX_VALUE;
-			topMiddleValue =    pseudoImgData[topMiddlePosition + 3] > 0 ? pseudoImgData[topMiddlePosition + 1] : Number.MAX_VALUE;			
-			topRightValue =     pseudoImgData[topRightPosition  + 3] > 0 ? pseudoImgData[topRightPosition  + 1] : Number.MAX_VALUE;
+			topLeftValue =      pseudoImgData[topLeftPosition   + 1];
+			topMiddleValue =    pseudoImgData[topMiddlePosition + 1];			
+			topRightValue =     pseudoImgData[topRightPosition  + 1];
 			
 			minEnergyValue = topMiddleValue;
 			minEnergyPosition = topMiddlePosition;
@@ -165,12 +167,32 @@ SeamCarving.prototype = {
 				minEnergyPosition = topRightPosition;
 			}
 			
-			if(pseudoImgData[minEnergyPosition + 3] == 0){
-				console.error("This pixel is already in a seam (TOD: border problem)");
-			}
-			
-			pseudoImgData[minEnergyPosition + 3] = 0;
+			tmpEnergy += minEnergyValue;
+			pixels.push(minEnergyPosition);
 		}
+		return { 'pixels' : pixels, 'energy' : tmpEnergy };
+	},
+	
+	_seamsList: function(){
+		var currentWidth = this._currentWidth,
+		currentHeight = this._currentHeight,
+		pixel = 0;
+		
+		var seams = [];
+		for (x = 0; x < currentWidth ; x++) {
+			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
+			seams.push(this._getSeam(pixel));
+		}
+		
+		//sort seams by energy
+		seams.sort(function(s1, s2){
+			if(s1.energy < s2.energy)
+				return -1;
+			else
+				return 1;
+		});
+				
+		return seams;
 	},
 	
 	_sliceSeam: function(){
@@ -216,18 +238,20 @@ SeamCarving.prototype = {
 	},
 	
 	resize: function(){
-		
 		//smaller ?
 		while(this._currentdata.length > this.out.data.length){
 			this._process();
-			this._seamMap();
+			this._seamMap(this._seamsList()[0]);
 			this._sliceSeam();
 		}
 		
+		//bigger
 		if(this.original.width < this.out.width){
 			this._process();
-			for(i = 0; i < this.out.width - this.original.width; i++)
-				this._seamMap();
+			var l = this._seamsList();
+			this._seamMap(l[0]);
+			//for(i = 0; i < this.out.width - this.original.width; i++)
+			//	this._seamMap();
 			this._addSeam();
 		}
 		

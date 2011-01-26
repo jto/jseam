@@ -50,7 +50,7 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = 4;
+					var NB_SLICE = -100;
 					
 					originalImage.src = "images/dolphin.jpg";
 					originalImage.addEventListener('load', function(){
@@ -61,12 +61,12 @@
 						seamCanvas.width = this.width + NB_SLICE;
 						
 						orgCtx.drawImage(this, 0,0);
-						
+												
 						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
 						var out = seamCtx.createImageData(this.width + NB_SLICE, this.height);
 
 						//var d = seamCtx.createImageData(this.width + (NB_SLICE > 0 ? (NB_SLICE - 1) : NB_SLICE + 1), this.height);
-						var d = seamCtx.createImageData(this.width, this.height);
+						var d = seamCtx.createImageData(this.width + NB_SLICE + 1, this.height);
 												
 						var s = new SeamCarving(imageData, out);						
 						s.resize();
@@ -74,6 +74,7 @@
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
 						sobelCtx.putImageData(s.debug(d, 2), 0,0);
 						energyCtx.putImageData(s.debug(d, 1), 0,0);
+						
 						seamCtx.putImageData(s.out, 0,0);
 						
 						//orgCanvas.style.width = this.width - NB_SLICE + "px";
