@@ -50,9 +50,9 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = 20;
+					var NB_SLICE = +30;
 					
-					originalImage.src = "images/dolphin.jpg";
+					originalImage.src = "images/people.jpg";
 					originalImage.addEventListener('load', function(){
 						//console.profile();
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;

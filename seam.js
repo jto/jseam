@@ -71,21 +71,20 @@ SeamCarving.prototype = {
 			leftMiddle =   pixel - 4;
 			rightMiddle =  pixel + 4;
 
-			/* simple derivative -- poor result...*/
-			// data[pixel + 1] = -1 * (data[topMiddle] || 0)
-			// 						  +2 * (data[pixel] || 0)
-			// 						  -1 * (data[leftMiddle] || 0)
-
-			/* Vertical Sobel */
+			/* simple discrete derivative */
+			//data[pixel + 1] = Math.abs(-1 * (data[topMiddle] || 0) + 1 * (data[bottomMiddle] || 0))
+			//							  + Math.abs(-1 * (data[leftMiddle] || 0) + 1 * (data[rightMiddle] || 0))
+			
+			// Vertical Sobel
 			sobelPixelV =
-				+ 1 * (data[topLeft]     || 0)
-				+ 2 * (data[topMiddle]   || 0)  
-				+ 1 * (data[topRight]    || 0) 
-				- 1 * (data[bottomLeft]  || 0) 
-				- 2 * (data[bottomMiddle]|| 0) 
-				- 1 * (data[bottomRight] || 0);
-		
-			/* Horizontal Sobel */
+					+ 1 * (data[topLeft]     || 0)
+					+ 2 * (data[topMiddle]   || 0)  
+					+ 1 * (data[topRight]    || 0) 
+					- 1 * (data[bottomLeft]  || 0) 
+					- 2 * (data[bottomMiddle]|| 0) 
+					- 1 * (data[bottomRight] || 0);
+					
+			//Horizontal Sobel
 			sobelPixelH =
 				+ 1 * (data[topLeft]     || 0)
 				+ 2 * (data[leftMiddle]  || 0)  
@@ -98,12 +97,12 @@ SeamCarving.prototype = {
 		
 			minEnergy = Math.min(Math.min(data[topLeft+1],data[topMiddle+1]),data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
-		
-			/* Should be done by the canvas implementation at the browser level
-			 http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-canvaspixelarray-set
-			 if (minEnergy > 255) minEnergy = 255;
-			if (minEnergy < 0) minEnergy = 0;*/
-		
+
+			// Should be done by the canvas implementation at the browser level
+			// http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-canvaspixelarray-set
+			// if (minEnergy > 255) minEnergy = 255;
+			// if (minEnergy < 0) minEnergy = 0;
+
 			data[pixel + 1] = Math.round(minEnergy);
 			data[pixel + 2] = sobelResult * 20; //random coef
 		}
@@ -179,6 +178,9 @@ SeamCarving.prototype = {
 			tmpEnergy += minEnergyValue;
 			pixels.push(minEnergyPosition);
 			
+			// XXX: THIS IS BAD !!
+			// this tend to preserve the first found seam, 
+			// there's a good chance that the new seam is actually a better candidate, and should be the one we preserve
 			if(minEnergyValue == Number.MAX_VALUE){
 				//ignore overlapping seams
 				console.warn("overlapping seam");
@@ -205,8 +207,8 @@ SeamCarving.prototype = {
 		var seams = [];
 		for(var x = 0; x < currentWidth ; x++) {
 			//begin one seam from the left, ne seam from the right, etc...
-			var alternatex = (x % 2 == 0) ? x : currentWidth - x;
-			pixel = ((currentHeight - 1) * currentWidth + alternatex) * 4;
+			//var alternatex = (x % 2 == 0) ? x : currentWidth - x;
+			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
 			var s = this._getSeam(pixel);
 			if(s != null)
 				seams.push(s);
@@ -276,8 +278,11 @@ SeamCarving.prototype = {
 			var diff = this.out.width - this._currentWidth;
 			this._process();
 			var l = this._seamsList();
+			l.forEach(function(s){
+				console.log(s.energy)
+			});
 			console.log("found: " + l.length);
-			for(var i = 0; (i < 40) && (i < diff) && (i < l.length); i++)
+			for(var i = 0; (i < 20) && (i < diff) && (i < l.length); i++)
 				this._seamMap(l[i]);
 			this._addSeam();
 		}
