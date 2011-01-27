@@ -12,7 +12,7 @@
 			}
 			
 			#grayscale, #sobel, #energy{
-				display: none;
+				display: block;
 			}
 			
 			#grayscale{
@@ -50,7 +50,7 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = -10;
+					var NB_SLICE = 20;
 					
 					originalImage.src = "images/dolphin.jpg";
 					originalImage.addEventListener('load', function(){

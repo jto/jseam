@@ -71,6 +71,11 @@ SeamCarving.prototype = {
 			leftMiddle =   pixel - 4;
 			rightMiddle =  pixel + 4;
 
+			/* simple derivative -- poor result...*/
+			// data[pixel + 1] = -1 * (data[topMiddle] || 0)
+			// 						  +2 * (data[pixel] || 0)
+			// 						  -1 * (data[leftMiddle] || 0)
+
 			/* Vertical Sobel */
 			sobelPixelV =
 				+ 1 * (data[topLeft]     || 0)
@@ -79,7 +84,7 @@ SeamCarving.prototype = {
 				- 1 * (data[bottomLeft]  || 0) 
 				- 2 * (data[bottomMiddle]|| 0) 
 				- 1 * (data[bottomRight] || 0);
-			
+		
 			/* Horizontal Sobel */
 			sobelPixelH =
 				+ 1 * (data[topLeft]     || 0)
@@ -90,15 +95,15 @@ SeamCarving.prototype = {
 				- 1 * (data[bottomRight] || 0);
 			sobelResult = 
 				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH))/80;
-			
+		
 			minEnergy = Math.min(Math.min(data[topLeft+1],data[topMiddle+1]),data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
-			
+		
 			/* Should be done by the canvas implementation at the browser level
 			 http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-canvaspixelarray-set
 			 if (minEnergy > 255) minEnergy = 255;
 			if (minEnergy < 0) minEnergy = 0;*/
-			
+		
 			data[pixel + 1] = Math.round(minEnergy);
 			data[pixel + 2] = sobelResult * 20; //random coef
 		}
@@ -127,6 +132,9 @@ SeamCarving.prototype = {
 	},
 	
 	_getSeam: function(from) {
+		
+		var CANAL = 1;
+		
 		var minEnergyPosition,
 		tmpEnergy = Number.MAX_VALUE,
 		currentWidth = this._currentWidth,
@@ -141,7 +149,7 @@ SeamCarving.prototype = {
 
 		var seamPixels = this._seamsPixels;
 		minEnergyPosition = from;
-		tmpEnergy = pseudoImgData[from + 1];
+		tmpEnergy = pseudoImgData[from + CANAL];
 		
 		pixels.push(minEnergyPosition);
 			
@@ -151,9 +159,9 @@ SeamCarving.prototype = {
 			topRightPosition =     minEnergyPosition - currentWidth * 4 + 4;
 
 			//avoid overlapping as much as we can
-			topLeftValue =      seamPixels[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + 1] : Number.MAX_VALUE;
-			topMiddleValue =    seamPixels[topMiddlePosition   + 3] > 0 ? pseudoImgData[topMiddlePosition + 1] : Number.MAX_VALUE;			
-			topRightValue =     seamPixels[topRightPosition   + 3] > 0 ? pseudoImgData[topRightPosition  + 1] : Number.MAX_VALUE;
+			topLeftValue =      seamPixels[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + CANAL] : Number.MAX_VALUE;
+			topMiddleValue =    seamPixels[topMiddlePosition   + 3] > 0 ? pseudoImgData[topMiddlePosition + CANAL] : Number.MAX_VALUE;			
+			topRightValue =     seamPixels[topRightPosition   + 3] > 0 ? pseudoImgData[topRightPosition  + CANAL] : Number.MAX_VALUE;
 			
 			minEnergyValue = topMiddleValue;
 			minEnergyPosition = topMiddlePosition;
@@ -173,6 +181,7 @@ SeamCarving.prototype = {
 			
 			if(minEnergyValue == Number.MAX_VALUE){
 				//ignore overlapping seams
+				console.warn("overlapping seam");
 				return null;
 			}
 			
@@ -248,7 +257,8 @@ SeamCarving.prototype = {
 				resultImageData.push(srcImgData[i + j])
 		}
 		
-		this._currentWidth = this.out.width;
+		this._currentWidth = (resultImageData.length) / 4 / this._currentHeight;
+		console.log(this._currentWidth);
 		this._currentdata = resultImageData;
 	},
 	
@@ -262,11 +272,12 @@ SeamCarving.prototype = {
 		}
 		
 		//bigger
-		var diff = this.out.width - this.original.width;
-		if(this.original.width < this.out.width){
+		while(this._currentWidth < this.out.width){
+			var diff = this.out.width - this._currentWidth;
 			this._process();
 			var l = this._seamsList();
-			for(var i = 0; (i < diff) && (i < l.length); i++)
+			console.log("found: " + l.length);
+			for(var i = 0; (i < 40) && (i < diff) && (i < l.length); i++)
 				this._seamMap(l[i]);
 			this._addSeam();
 		}
