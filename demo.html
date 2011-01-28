@@ -12,11 +12,11 @@
 			}
 			
 			#grayscale, #sobel, #energy{
-				display: block;
+				display: none;
 			}
 			
 			#grayscale{
-				display: block;
+				display: none;
 			}
 		</style>
 	</head>
@@ -50,9 +50,9 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = +30;
+					var NB_SLICE = +100;
 					
-					originalImage.src = "images/people.jpg";
+					originalImage.src = "images/fusee.gif";
 					originalImage.addEventListener('load', function(){
 						//console.profile();
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
