@@ -27,6 +27,10 @@ SeamCarving.prototype = {
 		}
 		
 		this._desaturate();
+		
+		//poor idea, blows up contour detection
+		//this._equalize();
+		
 		this._sobelAndEnergy();
 	},
 	
@@ -96,9 +100,9 @@ SeamCarving.prototype = {
 				- 2 * (data[rightMiddle] || 0) 
 				- 1 * (data[bottomRight] || 0);
 			sobelResult = 
-				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 50;
+				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 40;
 									
-			minEnergy = Math.min(Math.min(data[topLeft+1],data[topMiddle+1]),data[topRight+1]);
+			minEnergy = Math.min(data[topLeft+1], data[topMiddle+1], data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
 
 			// Should be done by the canvas implementation at the browser level
@@ -276,6 +280,30 @@ SeamCarving.prototype = {
 		
 		this._currentWidth = (resultImageData.length) / 4 / this._currentHeight;
 		this._currentdata = resultImageData;
+	},
+	
+	_equalize: function(){
+		//http://en.wikipedia.org/wiki/Histogram_equalization
+		var tmp = this._tmp, pmap = [];
+		for(var i = 0; i < 256; i++) pmap[i] = 0;
+		for(var i = 0; i < tmp.length; i+=4) 
+			pmap[Math.round(tmp[i])]++;
+		
+		var cdfmap = [], current = 0;
+		for(var i = 0; i < pmap.length; i++) 
+			cdfmap[i] = (current += pmap[i]);
+		
+		var h = this._currentHeight, 
+			w = this._currentWidth;
+				
+		var min = Math.min.apply(Math,cdfmap);
+		for(var p = 0; p < tmp.length; p += 4){
+			var v = Math.round(tmp[p]);
+			var r = cdfmap[v] - min;
+		 	r /= (h * w - min);
+			r *= 255;
+			tmp[p] = r;
+		}
 	},
 	
 	resize: function(){

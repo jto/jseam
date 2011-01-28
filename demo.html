@@ -12,15 +12,22 @@
 			}
 			
 			#grayscale, #sobel, #energy{
-				display: none;
+				display: block;
 			}
 			
 			#grayscale{
 				display: block;
 			}
+			
+			input{
+				width: 300px;
+				margin: 20px;
+			}
 		</style>
 	</head>
 	<body>
+		
+		<input id="nbseams" type="range" min="-100" max="100" step="1" value="0" />
 		
 		<canvas id="refImg" width="500" height="500"></canvas>
 		<canvas id="grayscale" width="500" height="500"></canvas>
@@ -30,9 +37,11 @@
 		
 		<script type="text/javascript" charset="utf-8">
 			(function(){
-								
-				var $ = document.querySelectorAll;
+				
 				document.addEventListener('DOMContentLoaded', function(){
+					
+					var orgCanvas = document.querySelector('#refImg');
+					
 					var orgCanvas = document.querySelector('#refImg');
 					var orgCtx = orgCanvas.getContext('2d');
 					
@@ -49,9 +58,7 @@
 					var seamCtx = seamcanvas.getContext('2d');
 					
 					var originalImage = new Image();
-					
-					var NB_SLICE = 400;
-					
+										
 					//originalImage.src = "images/fusee.gif";
 					//originalImage.src = "images/people.jpg";
 					//originalImage.src = "images/forest.jpg";
@@ -60,27 +67,26 @@
 						//console.profile();
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
 						sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;		
-						
-						seamCanvas.width = this.width + NB_SLICE;
-						
 						orgCtx.drawImage(this, 0,0);
-												
-						var imageData = orgCtx.getImageData(0,0, this.width, this.height);
-						var out = seamCtx.createImageData(this.width + NB_SLICE, this.height);
-
-						var d = seamCtx.createImageData(this.width + (NB_SLICE > 0 ? (0) : NB_SLICE + 1), this.height);
-						//var d = seamCtx.createImageData(this.width, this.height);
-												
-						var s = new SeamCarving(imageData, out);						
-						s.resize();
 						
-						grayCtx.putImageData(s.debug(d, 0), 0,0);
-						sobelCtx.putImageData(s.debug(d, 2), 0,0);
-						energyCtx.putImageData(s.debug(d, 1), 0,0);
+						var img = this;
 						
-						seamCtx.putImageData(s.out, 0,0);
+						document.querySelector('#nbseams').addEventListener('change', function(){
+							var slices = this.value * 1; //workaround weird safari bug
+							seamCanvas.width = img.width + slices;
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
+							var out = seamCtx.createImageData(img.width + slices, img.height);
+							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
+							//var d = seamCtx.createImageData(this.width, this.height);
+							var s = new SeamCarving(imageData, out);						
+							s.resize();
 						
-						//orgCanvas.style.width = this.width - NB_SLICE + "px";
+							grayCtx.putImageData(s.debug(d, 0), 0,0);
+							sobelCtx.putImageData(s.debug(d, 2), 0,0);
+							energyCtx.putImageData(s.debug(d, 1), 0,0);
+							seamCtx.putImageData(s.out, 0,0);
+							orgCanvas.style.width = img.width + slices + "px";
+						});
 						//console.profileEnd();
 					});
 				});
