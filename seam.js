@@ -71,12 +71,13 @@ SeamCarving.prototype = {
 			leftMiddle =   pixel - 4;
 			rightMiddle =  pixel + 4;
 
-			/* simple discrete derivative */
+			// simple discrete derivative
+			/*
 			sobelResult = Math.abs(-1 * (data[topMiddle] || 0) + 1 * (data[bottomMiddle] || 0))
 						  + Math.abs(-1 * (data[leftMiddle] || 0) + 1 * (data[rightMiddle] || 0));
-			sobelResult /= 80;
+			sobelResult /= 40;
+			*/
 			
-			/*
 			// Vertical Sobel
 			sobelPixelV =
 					+ 1 * (data[topLeft]     || 0)
@@ -95,9 +96,8 @@ SeamCarving.prototype = {
 				- 2 * (data[rightMiddle] || 0) 
 				- 1 * (data[bottomRight] || 0);
 			sobelResult = 
-				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH))/80;
-			*/
-						
+				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 50;
+									
 			minEnergy = Math.min(Math.min(data[topLeft+1],data[topMiddle+1]),data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
 

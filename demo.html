@@ -16,7 +16,7 @@
 			}
 			
 			#grayscale{
-				display: none;
+				display: block;
 			}
 		</style>
 	</head>
@@ -50,9 +50,12 @@
 					
 					var originalImage = new Image();
 					
-					var NB_SLICE = +100;
+					var NB_SLICE = 400;
 					
-					originalImage.src = "images/fusee.gif";
+					//originalImage.src = "images/fusee.gif";
+					//originalImage.src = "images/people.jpg";
+					//originalImage.src = "images/forest.jpg";
+					originalImage.src = "images/desert.jpg";
 					originalImage.addEventListener('load', function(){
 						//console.profile();
 						sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
