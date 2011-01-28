@@ -208,9 +208,9 @@ SeamCarving.prototype = {
 		//sort bottom pisels by energy
 		var sortedPixels = [];
 		var tmp = this._tmp;
-		//for(var x = 0; x < currentWidth ; x+=5) {
+		//for(var x = 0; x < currentWidth ; x++) {
 		var x = currentWidth;
-		while(x--){
+		while(x--){ // for some reason we got better results if we start by the end of the image...
 			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
 			sortedPixels.push({'index': pixel, 'energy': tmp[pixel + 1]})
 		}
@@ -292,8 +292,7 @@ SeamCarving.prototype = {
 			var diff = this.out.width - this._currentWidth;
 			this._process();
 			var l = this._seamsList();
-			console.log("found: " + l.length);
-			for(var i = 0; /*(i < 20) &&*/ (i < diff) && (i < l.length); i++)
+			for(var i = 0; (i < 35) && (i < diff) && (i < l.length); i++)
 				this._seamMap(l[i]);
 			this._addSeam();
 		}
