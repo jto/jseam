@@ -2,12 +2,12 @@
 * Seam carving -- refactored from
 * http://labs.pimsworld.org/wp-content/uploads/2009/04/demo-content-aware-image-resizing-2/
 */
-var SeamCarving = function(orgImgData, out){
+var SeamCarving = function(orgImgData, mask, out){
 	//original imaged
 	this.original = orgImgData;
 	//resized image
 	this.out = out;
-	
+		
 	this._currentWidth = this.original.width;
 	this._currentHeight = this.original.height;
 	this._currentdata = this.original.data; // current resize step RGBA

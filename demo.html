@@ -42,6 +42,10 @@
 				margin: 0;
 			}
 			
+			#drawCanvas{
+				opacity:0.5;
+				cursor:pointer;
+			}
 		</style>
 	</head>
 	<body>
@@ -50,7 +54,7 @@
 		
 		<div id="container">
 			<canvas id="orgCanvas" width="500" height="500"></canvas>
-			<canvas id="greenCanvas" width="500" height="500"></canvas>
+			<canvas id="drawCanvas" width="500" height="500"></canvas>
 		</div>
 		<canvas id="grayCanvas" width="500" height="500"></canvas>
 		<canvas id="sobelCanvas" width="500" height="500"></canvas>
@@ -67,7 +71,7 @@
 					var sobelCtx = sobelCanvas.getContext('2d');
 					var energyCtx = energyCanvas.getContext('2d');
 					var seamCtx = seamCanvas.getContext('2d');
-					var greenCtx = greenCanvas.getContext('2d');
+					var drawCtx = drawCanvas.getContext('2d');
 					
 					var originalImage = new Image();
 										
@@ -82,27 +86,39 @@
 						
 						container.style.height = this.height + "px";
 						container.style.width = this.width + "px";
-						greenCanvas.height = sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
-						greenCanvas.width = sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;
+						drawCanvas.height = sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
+						drawCanvas.width = sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;
 						
 						orgCtx.drawImage(this, 0,0);
 						seamCtx.drawImage(this, 0,0);
 						
-						greenCtx.clearRect(0,0,this.width, this.height)
-						greenCanvas.addEventListener('mousedown', function(e){
+						drawCtx.clearRect(0,0,this.width, this.height)
+						
+						drawCtx.setFillColor("#00FF00")
+						
+						var onmove = function(e){
 							var x = e.clientX - container.offsetLeft + document.body.scrollLeft;
 							var y = e.clientY - container.offsetTop + document.body.scrollTop;
-							console.log("x: " + x + " y: " + y);
-						});
+							//console.log("x: " + x + " y: " + y);
+							var s = 10;
+							drawCtx.arc(x, y, s, 0, Math.PI * 2, true); 
+							drawCtx.closePath();
+							drawCtx.fill();
+						}
+						drawCanvas.addEventListener('mousedown', function(e){ drawCanvas.addEventListener('mousemove', onmove); });
+						drawCanvas.addEventListener('mouseup', function(e){ drawCanvas.removeEventListener('mousemove', onmove); });
 						
 						var img = this;
 						document.querySelector('#nbseams').addEventListener('change', function(){
 							var slices = this.value * 1; //workaround weird safari bug
 							seamCanvas.width = img.width + slices;
 							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
+							
+							var masks = drawCtx.getImageData(0,0, img.width, img.height);
+							
 							var out = seamCtx.createImageData(img.width + slices, img.height);
 							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
-							var s = new SeamCarving(imageData, out);						
+							var s = new SeamCarving(imageData, masks, out);						
 							s.resize();
 													
 							grayCtx.putImageData(s.debug(d, 0), 0,0);
