@@ -17,11 +17,11 @@
 			}
 			
 			#grayCanvas, #sobelCanvas, #energyCanvas{
-				display: none;
+				display: block;
 			}
 			
 			#grayCanvas{
-				display: none;
+				display: block;
 			}
 			
 			input{
@@ -111,6 +111,7 @@
 						var img = this;
 						document.querySelector('#nbseams').addEventListener('change', function(){
 							var slices = this.value * 1; //workaround weird safari bug
+							//var slices = -1;
 							seamCanvas.width = img.width + slices;
 							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
 							

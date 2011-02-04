@@ -2,7 +2,7 @@
 * Seam carving -- refactored from
 * http://labs.pimsworld.org/wp-content/uploads/2009/04/demo-content-aware-image-resizing-2/
 */
-var SeamCarving = function(orgImgData, mask, out){
+var SeamCarving = function(orgImgData, masks, out){
 	//original imaged
 	this.original = orgImgData;
 	//resized image
@@ -12,6 +12,8 @@ var SeamCarving = function(orgImgData, mask, out){
 	this._currentHeight = this.original.height;
 	this._currentdata = this.original.data; // current resize step RGBA
 	this._tmp = [];	// current step gray + energy + sobel + seam
+	
+	this._masks = masks.data
 };
 
 SeamCarving.prototype = {
@@ -33,7 +35,7 @@ SeamCarving.prototype = {
 		
 		this._sobelAndEnergy();
 	},
-	
+		
 	/**
 	* Create grayscale image
 	*/
@@ -51,8 +53,9 @@ SeamCarving.prototype = {
 	*/
 	_sobelAndEnergy: function(){
 		var width = this._currentWidth, 
-		height = this.__currentHeight,
-		data = this._tmp,
+					height = this.__currentHeight,
+					data = this._tmp,
+					masks = this._masks,
      
 		sobelPixelH, sobelPixelV, sobelResult,
 		topLeft, topMiddle, topRight, bottomLeft, bottomMiddle, bottomRight, leftMiddle, rightMiddle,
@@ -101,6 +104,9 @@ SeamCarving.prototype = {
 				- 1 * (data[bottomRight] || 0);
 			sobelResult = 
 				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 40;
+			
+			//Apply protection mask
+			sobelResult = Math.max(sobelResult, masks[pixel + 1]);
 									
 			minEnergy = Math.min(data[topLeft+1], data[topMiddle+1], data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
@@ -242,16 +248,23 @@ SeamCarving.prototype = {
 	
 	_sliceSeam: function(){
 		var srcImgDataData = this._currentdata,
-		srcSeamMapData = this._tmp,
-		resultImageData = [];
+			srcSeamMapData = this._tmp,
+			srcMasks = this._masks,
+			resultMasks = [],
+			resultImageData = [];
 				
-		for(var i = 0; i < srcImgDataData.length; i+=4)
-			if(srcSeamMapData[i + 3]  > 0)
-				for(var j = 0; j < 4; j++)
-					resultImageData.push(srcImgDataData[i + j])
+		for(var i = 0; i < srcImgDataData.length; i+=4){
+			if(srcSeamMapData[i + 3]  > 0){
+				for(var j = 0; j < 4; j++){
+					resultImageData.push(srcImgDataData[i + j]);
+					resultMasks.push(srcMasks[i + j]);
+				}
+			}
+		}
 		
 		this._currentWidth--;
 		this._currentdata = resultImageData;
+		this._masks = resultMasks;
 	},
 	
 	_addSeam: function(){
