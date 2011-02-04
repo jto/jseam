@@ -51,6 +51,7 @@
 	<body>
 		
 		<input id="nbseams" type="range" min="-200" max="200" step="1" value="0" />
+		<input type="button" name="delete" value="delete selected" id="deletebtn" />
 		
 		<div id="container">
 			<canvas id="orgCanvas" width="500" height="500"></canvas>
@@ -93,9 +94,9 @@
 						seamCtx.drawImage(this, 0,0);
 						
 						drawCtx.clearRect(0,0,this.width, this.height)
-						
 						drawCtx.setFillColor("#00FF00")
 						
+						// Mask markers
 						var onmove = function(e){
 							var x = e.clientX - container.offsetLeft + document.body.scrollLeft;
 							var y = e.clientY - container.offsetTop + document.body.scrollTop;
@@ -109,16 +110,19 @@
 						drawCanvas.addEventListener('mouseup', function(e){ drawCanvas.removeEventListener('mousemove', onmove); });
 						
 						var img = this;
-						document.querySelector('#nbseams').addEventListener('change', function(){
+						
+						//resize
+						nbseams.addEventListener('change', function(){
 							var slices = this.value * 1; //workaround weird safari bug
 							//var slices = -1;
 							seamCanvas.width = img.width + slices;
-							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
 							
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
 							var masks = drawCtx.getImageData(0,0, img.width, img.height);
 							
 							var out = seamCtx.createImageData(img.width + slices, img.height);
 							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
+							
 							var s = new SeamCarving(imageData, masks, out);						
 							s.resize();
 													
@@ -130,8 +134,20 @@
 							orgCanvas.style.width = img.width + slices + "px";
 							drawCanvas.style.width = img.width + slices + "px";
 						});
+						
+						//delete selection
+						deletebtn.addEventListener('click', function(){
+							var out = seamCtx.createImageData(img.width, img.height);
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
+							var masks = drawCtx.getImageData(0,0, img.width, img.height);
+							var s = new SeamCarving(imageData, masks, out);
+							s.erase();
+							seamCtx.putImageData(s.out, 0,0);
+						});
+						
 						//console.profileEnd();
 					});
+					
 				});
 			})()
 		</script>

@@ -353,5 +353,41 @@ SeamCarving.prototype = {
 		//copy result
 		for(var i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
+	},
+	
+	erase: function(){
+		//invert mask and count slicesto delete
+		var masks = this._masks,
+			currentX = 0,
+			maxX = 0,
+			minX = Number.MAX_VALUE,
+			slices = 1,
+			width = this.original.width;
+			
+		for(var i = 1; i < masks.length; i+=4){
+			if(masks[i] > 0){
+				masks[i] = 0
+				
+				currentX = ((i-1) / 4) % width;
+				minX = Math.min(currentX, minX);
+				maxX = Math.max(currentX, maxX);
+			}
+			else masks[i] = 255;
+		}
+		
+		slices = maxX - minX;
+			
+		//smaller - this is not a good condition to stop
+		while(slices--){
+			this._process();
+			var l = this._seamsList();
+			if(l.length < 1) break;
+			this._seamMap(l[0]);
+			this._sliceSeam();
+		}
+		
+		//bigger
+		this.resize();
+	
 	}
 }
