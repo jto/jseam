@@ -294,7 +294,10 @@ SeamCarving.prototype = {
 				
 				resultImageData.push(255); //alpha
 			}
-			
+			resultMasks.push(0); //R
+			resultMasks.push(srcMasks[i]); //V
+			resultMasks.push(0); //B
+			resultMasks.push(0); //A
 			for(var j = 0; j < 4; j++)
 				resultImageData.push(srcImgData[i + j])
 		}
