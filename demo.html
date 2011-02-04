@@ -17,11 +17,11 @@
 			}
 			
 			#grayCanvas, #sobelCanvas, #energyCanvas{
-				display: block;
+				display: none;
 			}
 			
 			#grayCanvas{
-				display: block;
+				display: none;
 			}
 			
 			input{
@@ -128,6 +128,7 @@
 							seamCtx.putImageData(s.out, 0,0);
 							
 							orgCanvas.style.width = img.width + slices + "px";
+							drawCanvas.style.width = img.width + slices + "px";
 						});
 						//console.profileEnd();
 					});

@@ -269,8 +269,10 @@ SeamCarving.prototype = {
 	
 	_addSeam: function(){
 		var srcImgData = this._currentdata,
-		srcSeamMapData = this._tmp,
-		resultImageData = [];
+			srcSeamMapData = this._tmp,
+			srcMasks = this._masks,
+			resultMasks = [],
+			resultImageData = [];
 		
 		var left, right, m, ind;
 		
@@ -279,11 +281,17 @@ SeamCarving.prototype = {
 			if(!(srcSeamMapData[i + 3]  > 0)){
 				for(var j = 0; j < 3; j++){
 					ind = i + j;
-					left = (ind - 4) > 0 ? srcImgData[ind - 4] : srcImgData[ind];
-					right = (ind + 4) < srcImgData.length ? srcImgData[ind + 4] : srcImgData[ind];
-					m = (left + right + srcImgData[ind]) / 3;
+					left = (ind - 4) > 0 ? ind - 4 : ind;
+					right = (ind + 4) < srcImgData.length ? ind + 4 : ind;
+					m = (srcImgData[left] + srcImgData[right] + srcImgData[ind]) / 3;
 					resultImageData.push(m);
 				}
+				
+				resultMasks.push(0); //R
+				resultMasks.push((srcMasks[left + 1] + srcMasks[right + 1] + srcMasks[ind + 1]) / 3); //V
+				resultMasks.push(0); //B
+				resultMasks.push(0); //A
+				
 				resultImageData.push(255); //alpha
 			}
 			
@@ -293,6 +301,7 @@ SeamCarving.prototype = {
 		
 		this._currentWidth = (resultImageData.length) / 4 / this._currentHeight;
 		this._currentdata = resultImageData;
+		this._masks = resultMasks;
 	},
 	
 	_equalize: function(){
