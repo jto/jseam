@@ -44,11 +44,13 @@ SeamCarving.prototype = {
 	* Create grayscale image
 	*/
 	_desaturate: function(){
-		var pixel;
-		var outImgData = this._tmp;
-		var srcImgData = this._currentdata;
+		var pixel,
+			outImgData = this._tmp,
+			srcImgData = this._currentdata,
+			
+			l = srcImgData.length;
 	
-		for (pixel = 0; pixel < srcImgData.length; pixel += 4)
+		for (pixel = 0; pixel < l; pixel += 4)
 			outImgData[pixel] = (299 * srcImgData[pixel] + 587 * srcImgData[pixel + 1] + 114 * srcImgData[pixel + 2])/1000;
 	},
 	
@@ -67,9 +69,11 @@ SeamCarving.prototype = {
 		pixel,
 		minEnergy,
 		
-		p;
+		p,
 		
-		for (pixel = 0; pixel < data.length; pixel += 4) {
+		l = data.length;
+		
+		for (pixel = 0; pixel < l; pixel += 4) {
 				
 			topLeft =      pixel - (width + 1) * 4;
 			topMiddle =    pixel - (width    ) * 4;
@@ -139,9 +143,10 @@ SeamCarving.prototype = {
 	// 2 = Sobel,
 	// 3 = seam
 	debug: function(dest, mod){
-		var tmp = this._tmp;
-		var ddata = dest.data;
-		for(var pixel = 0; pixel < tmp.length; pixel += 4){
+		var tmp = this._tmp,
+			ddata = dest.data,
+			l = tmp.length;
+		for(var pixel = 0; pixel < l; pixel += 4){
 			ddata[pixel] = ddata[pixel + 1] = ddata[pixel + 2] = tmp[pixel + mod];
 			ddata[pixel + 3] = tmp[pixel + 3];
 		}
@@ -149,9 +154,11 @@ SeamCarving.prototype = {
 	},
 	
 	_seamMap:function(seam){
-		var data = seam.pixels;
-		var tmp = this._tmp;
-		for(var i = 0; i < data.length; i++)
+		var data = seam.pixels,
+			tmp = this._tmp,
+			l = data.length;
+			
+		for(var i = 0; i < l; i++)
 			tmp[data[i] + 3] = 0;
 	},
 	
@@ -221,18 +228,21 @@ SeamCarving.prototype = {
 	_seamsList: function(){
 		
 		this._seamsPixels = [];
-		for(var i = 0; i < this._currentdata.length; i++)
+		
+		var currentL = this._currentdata.length;
+		
+		for(var i = 0; i < currentL; i++)
 			this._seamsPixels[i] = 255;
 		
 		var currentWidth = this._currentWidth,
-		currentHeight = this._currentHeight,
-		pixel = 0;
-		
-		//sort bottom pisels by energy
-		var sortedPixels = [];
-		var tmp = this._tmp;
-		//for(var x = 0; x < currentWidth ; x++) {
-		var x = currentWidth, pos = 0;
+			currentHeight = this._currentHeight,
+			pixel = 0,
+			//sort bottom pisels by energy
+			sortedPixels = [],
+			tmp = this._tmp,
+			x = currentWidth,
+			pos = 0;
+			
 		while(x--){ // for some reason we got better results if we start by the end of the image...
 			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
 			sortedPixels[pos++] = {'index': pixel, 'energy': tmp[pixel + 1]}
@@ -243,9 +253,11 @@ SeamCarving.prototype = {
 			else return 1;
 		});
 		
-		var seams = [];
-		pos = 0;
-		for(var x = 0; x < sortedPixels.length ; x++) {
+		var seams = [],
+			l = sortedPixels.length;
+			
+		pos = 0;		
+		for(var x = 0; x < l ; x++) {
 			pixel = sortedPixels[x];
 			var s = this._getSeam(pixel.index);
 			if(s != null)
@@ -267,8 +279,8 @@ SeamCarving.prototype = {
 			resultMasks = [],
 			resultImageData = [];
 		
-		var pos = 0;		
-		for(var i = 0; i < srcImgDataData.length; i+=4){
+		var pos = 0, l = srcImgDataData.length;		
+		for(var i = 0; i < l; i+=4){
 			if(srcSeamMapData[i + 3]  > 0){
 				for(var j = 0; j < 4; j++){
 					resultImageData[pos] = srcImgDataData[i + j];
@@ -288,11 +300,16 @@ SeamCarving.prototype = {
 			srcSeamMapData = this._tmp,
 			srcMasks = this._masks,
 			resultMasks = [],
-			resultImageData = [];
+			resultImageData = [],
 		
-		var left, right, m, ind, pos = 0;
+			left,
+			right,
+			m,
+			ind,
+			pos = 0,
+			l = srcImgData.length;
 		
-		for(var i = 0; i < srcImgData.length; i+=4){
+		for(var i = 0; i < l; i+=4){
 			//We found a SEAM!
 			if(!(srcSeamMapData[i + 3]  > 0)){
 				for(var j = 0; j < 3; j++){
@@ -321,6 +338,7 @@ SeamCarving.prototype = {
 	_equalize: function(){
 		//http://en.wikipedia.org/wiki/Histogram_equalization
 		var tmp = this._tmp, pmap = [];
+		
 		for(var i = 0; i < 256; i++) pmap[i] = 0;
 		for(var i = 0; i < tmp.length; i+=4) 
 			pmap[Math.round(tmp[i])]++;
@@ -346,8 +364,10 @@ SeamCarving.prototype = {
 		console.profile();
 		
 		//invert red
-		var masks = this._masks;
-		for(var i = 0; i < masks.length; i+=4){
+		var masks = this._masks,
+			l = masks.length;
+			
+		for(var i = 0; i < l; i+=4){
 			if(masks[i] > 0)
 				masks[i] = 0
 			else 
@@ -373,7 +393,8 @@ SeamCarving.prototype = {
 		}
 		
 		//copy result
-		for(var i = 0; i < this.out.data.length; i++)
+		l = this.out.data.length;
+		for(var i = 0; i < l; i++)
 			this.out.data[i] = this._currentdata[i];
 			
 		console.profileEnd();
@@ -388,7 +409,7 @@ SeamCarving.prototype = {
 			slices = 1,
 			width = this.original.width;
 		
-		//invert mask and count slicesto delete	
+		//invert mask and count slices to delete	
 		for(var i = 0; i < masks.length; i+=4){
 			if(masks[i] > 0){
 				masks[i] = 0
