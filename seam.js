@@ -18,7 +18,11 @@ var SeamCarving = function(orgImgData, masks, out){
 
 SeamCarving.prototype = {
 		
-	_process: function(){
+	_process: function(exclusiveRED){
+		
+		if(exclusiveRED == undefined)
+			exclusiveRED = false;
+		
 		var tmp = this._tmp;
 		var l = this._currentdata.length;
 		
@@ -33,7 +37,7 @@ SeamCarving.prototype = {
 		//poor idea, blows up contour detection
 		//this._equalize();
 		
-		this._sobelAndEnergy();
+		this._sobelAndEnergy(exclusiveRED);
 	},
 		
 	/**
@@ -51,7 +55,7 @@ SeamCarving.prototype = {
 	/**
 	* build sobel and energy map
 	*/
-	_sobelAndEnergy: function(){
+	_sobelAndEnergy: function(exclusiveRED){
 		var width = this._currentWidth, 
 					height = this.__currentHeight,
 					data = this._tmp,
@@ -105,8 +109,16 @@ SeamCarving.prototype = {
 			sobelResult = 
 				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 40;
 			
-			//Apply protection mask
-			sobelResult = Math.max(sobelResult, masks[pixel + 1]);
+			
+			
+			//Apply protection mask, and force deletion only on red marked pixels if exclusiveRED is true
+			if(!this._ignoreRED && exclusiveRED)
+				sobelResult = Math.max(sobelResult, masks[pixel + 1], masks[pixel]);
+			else
+				sobelResult = Math.max(sobelResult, masks[pixel + 1]);
+			
+			//Apply deletion mask
+			if(!this._ignoreRED) sobelResult = Math.min(sobelResult, masks[pixel]);
 									
 			minEnergy = Math.min(data[topLeft+1], data[topMiddle+1], data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
@@ -284,22 +296,16 @@ SeamCarving.prototype = {
 					left = (ind - 4) > 0 ? ind - 4 : ind;
 					right = (ind + 4) < srcImgData.length ? ind + 4 : ind;
 					m = (srcImgData[left] + srcImgData[right] + srcImgData[ind]) / 3;
-					resultImageData.push(m);
-				}
-				
-				resultMasks.push(0); //R
-				resultMasks.push((srcMasks[left + 1] + srcMasks[right + 1] + srcMasks[ind + 1]) / 3); //V
-				resultMasks.push(0); //B
-				resultMasks.push(0); //A
-				
+					resultImageData.push(m);	
+					resultMasks.push((srcMasks[left] + srcMasks[right] + srcMasks[ind]) / 3);
+				}				
 				resultImageData.push(255); //alpha
 			}
-			resultMasks.push(0); //R
-			resultMasks.push(srcMasks[i]); //V
-			resultMasks.push(0); //B
-			resultMasks.push(0); //A
-			for(var j = 0; j < 4; j++)
-				resultImageData.push(srcImgData[i + j])
+			
+			for(var j = 0; j < 4; j++){
+				resultImageData.push(srcImgData[i + j]);
+				resultMasks.push(srcMasks[i + j]);
+			}
 		}
 		
 		this._currentWidth = (resultImageData.length) / 4 / this._currentHeight;
@@ -332,6 +338,15 @@ SeamCarving.prototype = {
 	},
 	
 	resize: function(){
+		//invert red
+		var masks = this._masks;
+		for(var i = 0; i < masks.length; i+=4){
+			if(masks[i] > 0)
+				masks[i] = 0
+			else 
+				masks[i] = 255;
+		}
+		
 		//smaller ?
 		while(this._currentdata.length > this.out.data.length){
 			this._process();
@@ -354,21 +369,21 @@ SeamCarving.prototype = {
 		for(var i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
 	},
-	
+		
 	erase: function(){
-		//invert mask and count slicesto delete
+		
 		var masks = this._masks,
 			currentX = 0,
 			maxX = 0,
 			minX = Number.MAX_VALUE,
 			slices = 1,
 			width = this.original.width;
-			
-		for(var i = 1; i < masks.length; i+=4){
+		
+		//invert mask and count slicesto delete	
+		for(var i = 0; i < masks.length; i+=4){
 			if(masks[i] > 0){
 				masks[i] = 0
-				
-				currentX = ((i-1) / 4) % width;
+				currentX = (i / 4) % width;
 				minX = Math.min(currentX, minX);
 				maxX = Math.max(currentX, maxX);
 			}
@@ -377,14 +392,17 @@ SeamCarving.prototype = {
 		
 		slices = maxX - minX;
 			
-		//smaller - this is not a good condition to stop
+		//smaller - this is probably not a good condition to stop
+		// should stop only when there's no black pixels left
 		while(slices--){
-			this._process();
+			this._process(true);
 			var l = this._seamsList();
 			if(l.length < 1) break;
 			this._seamMap(l[0]);
 			this._sliceSeam();
 		}
+		
+		this._ignoreRED = true;		
 		
 		//bigger
 		this.resize();

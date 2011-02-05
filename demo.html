@@ -13,18 +13,18 @@
 				border: solid 1px #515151;
 				margin: 20px;
 				display: block;
-				background: transparent;
+				background: red;
 			}
 			
 			#grayCanvas, #sobelCanvas, #energyCanvas{
-				display: none;
+				display: block;
 			}
 			
 			#grayCanvas{
-				display: none;
+				display: block;
 			}
 			
-			input{
+			input[type="range"]{
 				width: 300px;
 				margin: 20px;
 				display: block;
@@ -45,6 +45,7 @@
 			#drawCanvas{
 				opacity:0.5;
 				cursor:pointer;
+				background: transparent;
 			}
 		</style>
 	</head>
@@ -52,6 +53,8 @@
 		
 		<input id="nbseams" type="range" min="-200" max="200" step="1" value="0" />
 		<input type="button" name="delete" value="delete selected" id="deletebtn" />
+		
+		<label>Red: <input type="checkbox" name="red" value="" id="redMark"></label>
 		
 		<div id="container">
 			<canvas id="orgCanvas" width="500" height="500"></canvas>
@@ -96,12 +99,20 @@
 						drawCtx.clearRect(0,0,this.width, this.height)
 						drawCtx.setFillColor("#00FF00")
 						
+						redMark.addEventListener('change', function(){
+							if(this.checked)
+								drawCtx.setFillColor("#FF0000")
+							else
+								drawCtx.setFillColor("#00FF00")
+						})
+						
 						// Mask markers
 						var onmove = function(e){
 							var x = e.clientX - container.offsetLeft + document.body.scrollLeft;
 							var y = e.clientY - container.offsetTop + document.body.scrollTop;
 							//console.log("x: " + x + " y: " + y);
-							var s = 10;
+							var s = 15;
+							drawCtx.beginPath();
 							drawCtx.arc(x, y, s, 0, Math.PI * 2, true); 
 							drawCtx.closePath();
 							drawCtx.fill();
@@ -142,6 +153,12 @@
 							var masks = drawCtx.getImageData(0,0, img.width, img.height);
 							var s = new SeamCarving(imageData, masks, out);
 							s.erase();
+							
+							var d = seamCtx.createImageData(img.width, img.height);
+							grayCtx.putImageData(s.debug(d, 0), 0,0);
+							sobelCtx.putImageData(s.debug(d, 2), 0,0);
+							energyCtx.putImageData(s.debug(d, 1), 0,0);
+							
 							seamCtx.putImageData(s.out, 0,0);
 						});
 						
