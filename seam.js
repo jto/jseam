@@ -169,13 +169,14 @@ SeamCarving.prototype = {
 
 		pixel,
 		pixels = [],
-		x, y;
+		x, y,
+		pos = 0;
 
 		var seamPixels = this._seamsPixels;
 		minEnergyPosition = from;
 		tmpEnergy = pseudoImgData[from + CANAL];
 		
-		pixels.push(minEnergyPosition);
+		pixels[pos++] = minEnergyPosition;
 			
 		for (y = currentHeight - 1; y > 0 ; y--) {
 			topLeftPosition =      minEnergyPosition - currentWidth * 4 - 4;
@@ -201,7 +202,7 @@ SeamCarving.prototype = {
 			}
 			
 			tmpEnergy += minEnergyValue;
-			pixels.push(minEnergyPosition);
+			pixels[pos++] = minEnergyPosition;
 			
 			// We assume that this function is called with low energy pixels first
 			if(minEnergyValue == Number.MAX_VALUE){
@@ -231,10 +232,10 @@ SeamCarving.prototype = {
 		var sortedPixels = [];
 		var tmp = this._tmp;
 		//for(var x = 0; x < currentWidth ; x++) {
-		var x = currentWidth;
+		var x = currentWidth, pos = 0;
 		while(x--){ // for some reason we got better results if we start by the end of the image...
 			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
-			sortedPixels.push({'index': pixel, 'energy': tmp[pixel + 1]})
+			sortedPixels[pos++] = {'index': pixel, 'energy': tmp[pixel + 1]}
 		}
 		
 		sortedPixels.sort(function(p1, p2){
@@ -243,11 +244,12 @@ SeamCarving.prototype = {
 		});
 		
 		var seams = [];
+		pos = 0;
 		for(var x = 0; x < sortedPixels.length ; x++) {
 			pixel = sortedPixels[x];
 			var s = this._getSeam(pixel.index);
 			if(s != null)
-				seams.push(s);
+				seams[pos++] = s;
 		}
 		
 		//sort seams by energy
@@ -264,12 +266,14 @@ SeamCarving.prototype = {
 			srcMasks = this._masks,
 			resultMasks = [],
 			resultImageData = [];
-				
+		
+		var pos = 0;		
 		for(var i = 0; i < srcImgDataData.length; i+=4){
 			if(srcSeamMapData[i + 3]  > 0){
 				for(var j = 0; j < 4; j++){
-					resultImageData.push(srcImgDataData[i + j]);
-					resultMasks.push(srcMasks[i + j]);
+					resultImageData[pos] = srcImgDataData[i + j];
+					resultMasks[pos] = srcMasks[i + j];
+					pos++;
 				}
 			}
 		}
@@ -286,7 +290,7 @@ SeamCarving.prototype = {
 			resultMasks = [],
 			resultImageData = [];
 		
-		var left, right, m, ind;
+		var left, right, m, ind, pos = 0;
 		
 		for(var i = 0; i < srcImgData.length; i+=4){
 			//We found a SEAM!
@@ -296,15 +300,16 @@ SeamCarving.prototype = {
 					left = (ind - 4) > 0 ? ind - 4 : ind;
 					right = (ind + 4) < srcImgData.length ? ind + 4 : ind;
 					m = (srcImgData[left] + srcImgData[right] + srcImgData[ind]) / 3;
-					resultImageData.push(m);	
-					resultMasks.push((srcMasks[left] + srcMasks[right] + srcMasks[ind]) / 3);
+					
+					resultImageData[pos] = m;	
+					resultMasks[pos++] = (srcMasks[left] + srcMasks[right] + srcMasks[ind]) / 3;
 				}				
-				resultImageData.push(255); //alpha
+				resultImageData[pos++] = 255; //alpha
 			}
 			
 			for(var j = 0; j < 4; j++){
-				resultImageData.push(srcImgData[i + j]);
-				resultMasks.push(srcMasks[i + j]);
+				resultImageData[pos] = srcImgData[i + j];
+				resultMasks[pos++] = srcMasks[i + j];
 			}
 		}
 		
@@ -338,6 +343,8 @@ SeamCarving.prototype = {
 	},
 	
 	resize: function(){
+		console.profile();
+		
 		//invert red
 		var masks = this._masks;
 		for(var i = 0; i < masks.length; i+=4){
@@ -368,6 +375,8 @@ SeamCarving.prototype = {
 		//copy result
 		for(var i = 0; i < this.out.data.length; i++)
 			this.out.data[i] = this._currentdata[i];
+			
+		console.profileEnd();
 	},
 		
 	erase: function(){

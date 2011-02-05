@@ -85,9 +85,7 @@
 					originalImage.src = "images/desert.jpg";
 										
 					//Seam carving function
-					originalImage.addEventListener('load', function(){
-						//console.profile();
-						
+					originalImage.addEventListener('load', function(){					
 						container.style.height = this.height + "px";
 						container.style.width = this.width + "px";
 						drawCanvas.height = sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
@@ -161,10 +159,7 @@
 							
 							seamCtx.putImageData(s.out, 0,0);
 						});
-						
-						//console.profileEnd();
 					});
-					
 				});
 			})()
 		</script>
