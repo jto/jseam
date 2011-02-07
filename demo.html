@@ -13,15 +13,12 @@
 				border: solid 1px #515151;
 				margin: 20px;
 				display: block;
-				background: red;
+				background: transparent;
 			}
 			
 			#grayCanvas, #sobelCanvas, #energyCanvas{
-				display: none;
-			}
-			
-			#grayCanvas{
-				display: none;
+				display: block;
+				background: red;
 			}
 			
 			input[type="range"]{
@@ -45,7 +42,6 @@
 			#drawCanvas{
 				opacity:0.5;
 				cursor:pointer;
-				background: transparent;
 			}
 		</style>
 	</head>
@@ -67,6 +63,9 @@
 		
 		<script type="text/javascript" charset="utf-8">
 			(function(){
+				
+				var worker = new Worker('worker.js');
+				
 				
 				document.addEventListener('DOMContentLoaded', function(){
 					
@@ -126,11 +125,20 @@
 							//var slices = -1;
 							seamCanvas.width = img.width + slices;
 							
-							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height); //considered DOM...
 							var masks = drawCtx.getImageData(0,0, img.width, img.height);
-							
 							var out = seamCtx.createImageData(img.width + slices, img.height);
 							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
+							
+							/*
+							worker.onmessage = function(event){
+								seamCtx.putImageData(event.data, 0,0);
+								orgCanvas.style.width = img.width + slices + "px";
+								drawCanvas.style.width = img.width + slices + "px";
+							}
+							worker.postMessage({'f': 'resize', 'imageData': imageData, 'masks': masks, 'out':out})
+							*/
+							
 							
 							var s = new SeamCarving(imageData, masks, out);						
 							s.resize();

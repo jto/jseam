@@ -7,7 +7,7 @@ var SeamCarving = function(orgImgData, masks, out){
 	this.original = orgImgData;
 	//resized image
 	this.out = out;
-		
+			
 	this._currentWidth = this.original.width;
 	this._currentHeight = this.original.height;
 	this._currentdata = this.original.data; // current resize step RGBA
@@ -18,11 +18,8 @@ var SeamCarving = function(orgImgData, masks, out){
 
 SeamCarving.prototype = {
 		
-	_process: function(exclusiveRED){
-		
-		if(exclusiveRED == undefined)
-			exclusiveRED = false;
-		
+	_process: function(){
+				
 		var tmp = this._tmp;
 		var l = this._currentdata.length;
 		
@@ -37,7 +34,7 @@ SeamCarving.prototype = {
 		//poor idea, blows up contour detection
 		//this._equalize();
 		
-		this._sobelAndEnergy(exclusiveRED);
+		this._sobelAndEnergy();
 	},
 		
 	/**
@@ -51,13 +48,13 @@ SeamCarving.prototype = {
 			l = srcImgData.length;
 	
 		for (pixel = 0; pixel < l; pixel += 4)
-			outImgData[pixel] = (299 * srcImgData[pixel] + 587 * srcImgData[pixel + 1] + 114 * srcImgData[pixel + 2])/1000;
+			outImgData[pixel] = Math.round((299 * srcImgData[pixel] + 587 * srcImgData[pixel + 1] + 114 * srcImgData[pixel + 2]) / 1000);
 	},
 	
 	/**
 	* build sobel and energy map
 	*/
-	_sobelAndEnergy: function(exclusiveRED){
+	_sobelAndEnergy: function(){
 		var width = this._currentWidth, 
 					height = this.__currentHeight,
 					data = this._tmp,
@@ -111,22 +108,20 @@ SeamCarving.prototype = {
 				- 2 * (data[rightMiddle] || 0) 
 				- 1 * (data[bottomRight] || 0);
 			sobelResult = 
-				Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 40;
-			
-			
-			
-			//Apply protection mask, and force deletion only on red marked pixels if exclusiveRED is true
-			if(!this._ignoreRED && exclusiveRED)
-				sobelResult = Math.max(sobelResult, masks[pixel + 1], masks[pixel]);
-			else
-				sobelResult = Math.max(sobelResult, masks[pixel + 1]);
-			
-			//Apply deletion mask
-			if(!this._ignoreRED) sobelResult = Math.min(sobelResult, masks[pixel]);
+				Math.round(Math.sqrt((sobelPixelV* sobelPixelV)+(sobelPixelH * sobelPixelH)) / 40);
+						
+			sobelResult = Math.max(sobelResult, masks[pixel + 1]);
+
+			 if(!this._ignoreRED) 
+				sobelResult = Math.min(sobelResult, masks[pixel]);
 									
 			minEnergy = Math.min(data[topLeft+1], data[topMiddle+1], data[topRight+1]);
 			minEnergy = isNaN(minEnergy) ? sobelResult : minEnergy + sobelResult;
-
+			
+			//force the minimal seam to be in the red area
+			if(!this._ignoreRED)
+				minEnergy += masks[pixel];
+									
 			// Should be done by the canvas implementation at the browser level
 			// http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-canvaspixelarray-set
 			// if (minEnergy > 255) minEnergy = 255;
@@ -162,7 +157,8 @@ SeamCarving.prototype = {
 			tmp[data[i] + 3] = 0;
 	},
 	
-	_getSeam: function(from) {
+	//restrict == take only seam crossing the red area
+	_getSeam: function(from, restrict) {
 		
 		var CANAL = 1;
 		
@@ -171,18 +167,20 @@ SeamCarving.prototype = {
 		currentWidth = this._currentWidth,
 		currentHeight = this._currentHeight,
 		pseudoImgData = this._tmp,
+		masks = this._masks,
 		topLeftPosition, topMiddlePosition, topRightPosition,topLeftValue, topMiddleValue, topRightValue,
 		minEnergyValue,
 
 		pixel,
 		pixels = [],
 		x, y,
-		pos = 0;
+		pos = 0,
+		hasRED = false;
 
 		var seamPixels = this._seamsPixels;
 		minEnergyPosition = from;
 		tmpEnergy = pseudoImgData[from + CANAL];
-		
+				
 		pixels[pos++] = minEnergyPosition;
 			
 		for (y = currentHeight - 1; y > 0 ; y--) {
@@ -194,7 +192,7 @@ SeamCarving.prototype = {
 			topLeftValue =      seamPixels[topLeftPosition   + 3] > 0 ? pseudoImgData[topLeftPosition   + CANAL] : Number.MAX_VALUE;
 			topMiddleValue =    seamPixels[topMiddlePosition   + 3] > 0 ? pseudoImgData[topMiddlePosition + CANAL] : Number.MAX_VALUE;			
 			topRightValue =     seamPixels[topRightPosition   + 3] > 0 ? pseudoImgData[topRightPosition  + CANAL] : Number.MAX_VALUE;
-						
+									
 			minEnergyValue = topMiddleValue;
 			minEnergyPosition = topMiddlePosition;
 
@@ -203,6 +201,7 @@ SeamCarving.prototype = {
 				minEnergyValue = topMiddleValue;
 				minEnergyPosition = topLeftPosition;
 			}
+			
 			if (topRightValue < minEnergyValue && (((topMiddlePosition + 4) % (currentWidth)) > 0)){
 				minEnergyValue = topRightValue;
 				minEnergyPosition = topRightPosition;
@@ -210,6 +209,9 @@ SeamCarving.prototype = {
 			
 			tmpEnergy += minEnergyValue;
 			pixels[pos++] = minEnergyPosition;
+			
+			if(masks[minEnergyPosition] == 0)
+				hasRED = true,
 			
 			// We assume that this function is called with low energy pixels first
 			if(minEnergyValue == Number.MAX_VALUE){
@@ -222,28 +224,31 @@ SeamCarving.prototype = {
 			seamPixels[minEnergyPosition + 3] = 0;
 		}
 		
+		if(restrict && !hasRED) 
+			return null;
+			
 		return { 'pixels' : pixels, 'energy' : tmpEnergy };
 	},
 	
-	_seamsList: function(){
+	_seamsList: function(restrict){
 		
 		this._seamsPixels = [];
 		
 		var currentL = this._currentdata.length;
-		
+
 		for(var i = 0; i < currentL; i++)
 			this._seamsPixels[i] = 255;
-		
+				
 		var currentWidth = this._currentWidth,
 			currentHeight = this._currentHeight,
 			pixel = 0,
-			//sort bottom pisels by energy
+			//sort bottom pixels by energy
 			sortedPixels = [],
 			tmp = this._tmp,
-			x = currentWidth,
+			x = this._currentWidth,
 			pos = 0;
-			
-		while(x--){ // for some reason we got better results if we start by the end of the image...
+		
+		while(--x){ // for some reason we got better results if we start by the end of the image...
 			pixel = ((currentHeight - 1) * currentWidth + x) * 4;
 			sortedPixels[pos++] = {'index': pixel, 'energy': tmp[pixel + 1]}
 		}
@@ -252,14 +257,14 @@ SeamCarving.prototype = {
 			if(p1.energy < p2.energy) return -1;
 			else return 1;
 		});
-		
+				
 		var seams = [],
 			l = sortedPixels.length;
 			
 		pos = 0;		
 		for(var x = 0; x < l ; x++) {
 			pixel = sortedPixels[x];
-			var s = this._getSeam(pixel.index);
+			var s = this._getSeam(pixel.index, restrict);
 			if(s != null)
 				seams[pos++] = s;
 		}
@@ -361,8 +366,6 @@ SeamCarving.prototype = {
 	},
 	
 	resize: function(){
-		console.profile();
-		
 		//invert red
 		var masks = this._masks,
 			l = masks.length;
@@ -377,11 +380,11 @@ SeamCarving.prototype = {
 		//smaller ?
 		while(this._currentdata.length > this.out.data.length){
 			this._process();
-			var l = this._seamsList();
+			var l = this._seamsList(true);
 			this._seamMap(l[0]);
 			this._sliceSeam();
 		}
-		
+				
 		//bigger
 		while(this._currentWidth < this.out.width){
 			var diff = this.out.width - this._currentWidth;
@@ -396,8 +399,6 @@ SeamCarving.prototype = {
 		l = this.out.data.length;
 		for(var i = 0; i < l; i++)
 			this.out.data[i] = this._currentdata[i];
-			
-		console.profileEnd();
 	},
 		
 	erase: function(){
@@ -406,28 +407,21 @@ SeamCarving.prototype = {
 			currentX = 0,
 			maxX = 0,
 			minX = Number.MAX_VALUE,
-			slices = 1,
 			width = this.original.width;
 		
 		//invert mask and count slices to delete	
 		for(var i = 0; i < masks.length; i+=4){
-			if(masks[i] > 0){
+			if(masks[i] > 0)
 				masks[i] = 0
-				currentX = (i / 4) % width;
-				minX = Math.min(currentX, minX);
-				maxX = Math.max(currentX, maxX);
-			}
-			else masks[i] = 255;
+			else 
+				masks[i] = 255;
 		}
 		
-		slices = maxX - minX;
-			
-		//smaller - this is probably not a good condition to stop
-		// should stop only when there's no black pixels left
-		while(slices--){
-			this._process(true);
-			var l = this._seamsList();
-			if(l.length < 1) break;
+		while(true){
+			this._process();
+			var l = this._seamsList(true);
+			console.log(l.length);
+			if(l.length < 1) break; //nothing else to deletes
 			this._seamMap(l[0]);
 			this._sliceSeam();
 		}
