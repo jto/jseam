@@ -17,7 +17,7 @@
 			}
 			
 			#grayCanvas, #sobelCanvas, #energyCanvas{
-				display: block;
+				display: none;
 				background: red;
 			}
 			
@@ -63,9 +63,9 @@
 		
 		<script type="text/javascript" charset="utf-8">
 			(function(){
+				var USE_WORKER = true;
 				
 				var worker = new Worker('worker.js');
-				
 				
 				document.addEventListener('DOMContentLoaded', function(){
 					
@@ -130,26 +130,38 @@
 							var out = seamCtx.createImageData(img.width + slices, img.height);
 							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
 							
-							/*
-							worker.onmessage = function(event){
-								seamCtx.putImageData(event.data, 0,0);
+							if(USE_WORKER){							
+								worker.onmessage = function(event){
+									var res = event.data;
+									for(var i = 0; i < out.data.length; i++)
+										out.data[i] = res.data[i];
+									
+									//copy result in imageData
+									seamCtx.putImageData(out, 0,0);
+									orgCanvas.style.width = img.width + slices + "px";
+									drawCanvas.style.width = img.width + slices + "px";
+								}
+							
+								// ImageData are considered DOM elements, we can't use them in WebWorker
+								// We create a ImageData like object
+								var coincoinIN = {'data': imageData.data, 'width': imageData.width, 'height': imageData.height};
+								var coincoinOUT = {'data': out.data, 'width': out.width, 'height': out.height};
+								var coicoinMASKS = {'data': masks.data, 'width': masks.width, 'height': masks.height};
+							
+								worker.postMessage({'f': 'resize', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
+							}
+							else{
+								var s = new SeamCarving(imageData, masks, out);						
+								s.resize();
+													
+								grayCtx.putImageData(s.debug(d, 0), 0,0);
+								sobelCtx.putImageData(s.debug(d, 2), 0,0);
+								energyCtx.putImageData(s.debug(d, 1), 0,0);
+								seamCtx.putImageData(s.out, 0,0);
+							
 								orgCanvas.style.width = img.width + slices + "px";
 								drawCanvas.style.width = img.width + slices + "px";
 							}
-							worker.postMessage({'f': 'resize', 'imageData': imageData, 'masks': masks, 'out':out})
-							*/
-							
-							
-							var s = new SeamCarving(imageData, masks, out);						
-							s.resize();
-													
-							grayCtx.putImageData(s.debug(d, 0), 0,0);
-							sobelCtx.putImageData(s.debug(d, 2), 0,0);
-							energyCtx.putImageData(s.debug(d, 1), 0,0);
-							seamCtx.putImageData(s.out, 0,0);
-							
-							orgCanvas.style.width = img.width + slices + "px";
-							drawCanvas.style.width = img.width + slices + "px";
 						});
 						
 						//delete selection
@@ -157,15 +169,32 @@
 							var out = seamCtx.createImageData(img.width, img.height);
 							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
 							var masks = drawCtx.getImageData(0,0, img.width, img.height);
-							var s = new SeamCarving(imageData, masks, out);
-							s.erase();
 							
-							var d = seamCtx.createImageData(img.width, img.height);
-							grayCtx.putImageData(s.debug(d, 0), 0,0);
-							sobelCtx.putImageData(s.debug(d, 2), 0,0);
-							energyCtx.putImageData(s.debug(d, 1), 0,0);
+							if(USE_WORKER){				
+								worker.onmessage = function(event){
+									var res = event.data;
+									for(var i = 0; i < out.data.length; i++)
+										out.data[i] = res.data[i];
+									
+									seamCtx.putImageData(out, 0,0);
+								}
 							
-							seamCtx.putImageData(s.out, 0,0);
+								var coincoinIN = {'data': imageData.data, 'width': imageData.width, 'height': imageData.height};
+								var coincoinOUT = {'data': out.data, 'width': out.width, 'height': out.height};
+								var coicoinMASKS = {'data': masks.data, 'width': masks.width, 'height': masks.height};
+								worker.postMessage({'f': 'erase', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
+							}
+							else{
+								var s = new SeamCarving(imageData, masks, out);
+								s.erase();
+							
+								var d = seamCtx.createImageData(img.width, img.height);
+								grayCtx.putImageData(s.debug(d, 0), 0,0);
+								sobelCtx.putImageData(s.debug(d, 2), 0,0);
+								energyCtx.putImageData(s.debug(d, 1), 0,0);
+							
+								seamCtx.putImageData(s.out, 0,0);
+							}
 						});
 					});
 				});

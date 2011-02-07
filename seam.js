@@ -216,7 +216,7 @@ SeamCarving.prototype = {
 			// We assume that this function is called with low energy pixels first
 			if(minEnergyValue == Number.MAX_VALUE){
 				//ignore overlapping seams
-				console.warn("overlapping seam");
+				//console.warn("overlapping seam");
 				return null;
 			}
 			
