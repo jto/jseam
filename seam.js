@@ -369,10 +369,11 @@ SeamCarving.prototype = {
 		//invert red
 		var masks = this._masks,
 			l = masks.length;
-			
+		
+		this._ignoreRED = true;	
 		for(var i = 0; i < l; i+=4){
 			if(masks[i] > 0)
-				masks[i] = 0
+				masks[i] = 0;
 			else 
 				masks[i] = 255;
 		}
@@ -380,7 +381,7 @@ SeamCarving.prototype = {
 		//smaller ?
 		while(this._currentdata.length > this.out.data.length){
 			this._process();
-			var l = this._seamsList(true);
+			var l = this._seamsList();
 			this._seamMap(l[0]);
 			this._sliceSeam();
 		}
@@ -420,7 +421,6 @@ SeamCarving.prototype = {
 		while(true){
 			this._process();
 			var l = this._seamsList(true);
-			console.log(l.length);
 			if(l.length < 1) break; //nothing else to deletes
 			this._seamMap(l[0]);
 			this._sliceSeam();
