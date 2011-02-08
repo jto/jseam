@@ -234,6 +234,19 @@
 					font-size: 0.7em;
 					margin-right: 10px;
 				}
+				
+				hr{
+					border: none;
+					border-bottom: solid 1px #333;
+					border-top: solid 1px #444;
+				}
+				
+				.panel strong{
+					color: #AAA;
+					text-shadow: -1px -1px 2px black;
+					text-transform: uppercase;
+					font-size: 0.7em;
+				}
 			</style>
 			
 			<script src="js/load.js" type="text/javascript"></script>
@@ -679,7 +692,7 @@ ctx.putImageData(grayLena, 450, 25);</pre>
 				display: inline-block;
 			}
 			
-			#seamCanvas{
+			#seamCanvas, #grayCanvas, #sobelCanvas, #energyCanvas{
 				margin-top: 20px;
 			}
 			
@@ -726,12 +739,61 @@ ctx.putImageData(grayLena, 450, 25);</pre>
 					<div style="width: 200px; overflow: auto; float: right; padding: 15px" id="seampanel" class="panel">
 						<p><input id="nbseams" type="range" min="-200" max="200" step="1" value="0" /></p>
 						<p>
+							<label>Use Worker <input type="checkbox" checked name="useWorker" value="" id="useWorker"></label>
+						</p>
+						<p>
 							<label>del. <input type="checkbox" name="red" value="" id="redMark"></label>
 							<a href="#" id="deletebtn" class="button delete">delete!</a>
 						</p>
 						<p>
 							<a href="#" id="resetbtn" class="button reset">reset!</a>
 						</p>
+						<div id="debug" style="display:none">
+							<hr />
+							<strong>Debug</strong>
+							<p>
+								<label>normal <input type="radio" checked name="debug" value="normal" id="debNormal"></label> <br />
+								<label>gray <input type="radio" name="debug" value="gray" id="debGray"></label> <br />
+								<label>sobel <input type="radio" name="debug" value="sobel" id="debSobel"></label> <br />
+								<label>energy <input type="radio" name="debug" value="energy" id="debEnergy"></label> <br />
+							</p>
+						</div>
+						
+						<script type="text/javascript" charset="utf-8">
+							useWorker.addEventListener('click', function(){
+								USE_WORKER = useWorker.checked;
+								if(useWorker.checked){
+									debug.style.display = "none";
+								}
+								else{
+									debug.style.display = "block";
+								}
+							})
+							debNormal.addEventListener('click', function(){
+								grayCanvas.style.display = "none";
+								sobelCanvas.style.display = "none";
+								energyCanvas.style.display = "none";
+								seamCanvas.style.display = "block";
+							})
+							debGray.addEventListener('click', function(){
+								grayCanvas.style.display = "block";
+								sobelCanvas.style.display = "none";
+								energyCanvas.style.display = "none";
+								seamCanvas.style.display = "none";
+							})
+							debSobel.addEventListener('click', function(){
+								grayCanvas.style.display = "none";
+								sobelCanvas.style.display = "block";
+								energyCanvas.style.display = "none";
+								seamCanvas.style.display = "none";
+							})
+							debEnergy.addEventListener('click', function(){
+								grayCanvas.style.display = "none";
+								sobelCanvas.style.display = "none";
+								energyCanvas.style.display = "block";
+								seamCanvas.style.display = "none";
+							})
+						</script>
 					</div>
 
 					<div style="width: 665px; overflow: auto">

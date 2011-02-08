@@ -1,5 +1,5 @@
+	USE_WORKER = true;
 	(function(){
-		var USE_WORKER = true;
 
 		var worker = new Worker('../worker.js');
 
@@ -112,6 +112,10 @@
 						
 						var s = new SeamCarving(imageData, masks, out);						
 						s.resize();
+						
+						sobelCanvas.width = seamCanvas.width;
+						grayCanvas.width = seamCanvas.width;
+						energyCanvas.width = seamCanvas.width;
 											
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
 						sobelCtx.putImageData(s.debug(d, 2), 0,0);
@@ -168,7 +172,7 @@
 						var s = new SeamCarving(imageData, masks, out);
 						s.erase();
 					
-						var d = seamCtx.createImageData(width, height);
+						var d = seamCtx.createImageData(width, seamCanvas.height);
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
 						sobelCtx.putImageData(s.debug(d, 2), 0,0);
 						energyCtx.putImageData(s.debug(d, 1), 0,0);
