@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <style>
+      body, html {
+        background: #000;
+        color: white;
+        text-align: center;
+      }
+      #content {
+        width: 660px;
+        margin: 50px auto;
+        background: #000;
+      }
+      #content > div {
+        background-image: -moz-radial-gradient( 50% 20% 90deg, circle, #543 0%, #333 60%);
+        background-image: -webkit-gradient(radial, 50% 20%, 0, 50% 20%, 100, from(#543), to(#333));
+        display: inline-block;
+        width: 22%;
+        margin: 0.8% 1%;
+        z-index: 1;
+        overflow: hidden;
+        border-radius: 5px;
+        -moz-transition-duration: 0.4s;
+        -webkit-transition-duration: 0.4s;
+        -moz-transform: scale(1) translate(0, 0);
+        -webkit-transform: scale(1) translate(0, 0);
+        position: relative;
+      }
+      #content > div:hover {
+         z-index: 10;
+      }
+      #content > div:hover {
+        -moz-transform: scale(1.8) translate(0, 10px);
+        -moz-box-shadow: 0px 10px 20px black;
+        -webkit-transform: scale(1.8) translate(0, 10px);
+        -webkit-box-shadow: 0px 10px 20px black;
+      }
+      
+      #content > div .signe {
+        font-family: HanWangShinSuMedium;
+        padding-top: 20px;
+        font-size: 90px;
+        text-shadow: 0px 0px 5px black;
+        color: #f80;
+        display: block;
+        -moz-transition-duration: 0.6s;
+        -moz-transition-delay: 0s;
+        -webkit-transition-duration: 0.6s;
+        -webkit-transition-delay: 0s;
+      }
+      #content > div:hover .signe {
+        -webkit-transition-delay: 0s;
+        -moz-transition-delay: 0s;
+        text-shadow: 0px 0px 5px red;
+      }
+      
+      #content > div .year {
+        font-weight: bold;
+        color: rgba(255,150,50,0.8);
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        z-index: 1;
+      }
+      
+      #content > div .trad {
+        background: #f60;
+        display: block;
+        color: #000;
+        font-weight: bold;
+        font-size: 20px;
+        -moz-transform: translate(0, 30px);
+        -moz-transition-duration: 0.6s;
+        -moz-transition-delay: 0.5s;
+        -webkit-transform: translate(0, 30px);
+        -webkit-transition-duration: 0.6s;
+        -webkit-transition-delay: 0.5s;
+      }
+      #content > div:hover .trad {
+        -moz-transition-delay: 0.4s;
+        -moz-transition-duration: 0.2s;
+        -moz-transform: translate(0, 0);
+        -webkit-transition-delay: 0.4s;
+        -webkit-transition-duration: 0.2s;
+        -webkit-transform: translate(0, 0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <div>
+        <span class="signe">鼠</span>
+        <span class="trad">Rat</span>
+        <span class="year">2008</span>
+      </div><div>
+        <span class="signe">牛</span>
+        <span class="trad">Boeuf</span>
+        <span class="year">2009</span>
+      </div><div>
+        <span class="signe">虎</span>
+        <span class="trad">Tigre</span>
+        <span class="year">2010</span>
+      </div><div>
+        <span class="signe">兔</span>
+        <span class="trad">Lapin</span>
+        <span class="year">2011</span>
+      </div><div>
+        <span class="signe">龍</span>
+        <span class="trad">Dragon</span>
+        <span class="year">2012</span>
+      </div><div>
+        <span class="signe">蛇</span>
+        <span class="trad">Serpent</span>
+        <span class="year">2013</span>
+      </div><div>
+        <span class="signe">馬</span>
+        <span class="trad">Cheval</span>
+        <span class="year">2014</span>
+      </div><div>
+        <span class="signe">羊</span>
+        <span class="trad">Chèvre</span>
+        <span class="year">2015</span>
+      </div><div>
+        <span class="signe">猴</span>
+        <span class="trad">Singe</span>
+        <span class="year">2016</span>
+      </div><div>
+        <span class="signe">雞</span>
+        <span class="trad">Poule</span>
+        <span class="year">2017</span>
+      </div><div>
+        <span class="signe">狗</span>
+        <span class="trad">Chien</span>
+        <span class="year">2018</span>
+      </div><div>
+        <span class="signe">豬</span>
+        <span class="trad">Cochon</span>
+        <span class="year">2019</span>
+      </div>
+    </div>
+  </body>
+</html>

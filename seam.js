@@ -211,7 +211,7 @@ SeamCarving.prototype = {
 			pixels[pos++] = minEnergyPosition;
 			
 			if(masks[minEnergyPosition] == 0)
-				hasRED = true,
+				hasRED = true;
 			
 			// We assume that this function is called with low energy pixels first
 			if(minEnergyValue == Number.MAX_VALUE){

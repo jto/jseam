@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!--
+
+    ***************************************************
+    *                                                 *
+    * DZ-Slides: HTML Template for your presentations *
+    *                                                 *
+    ***************************************************
+      More information: http://paulrouget.com/dzslides
+
+
+    Author: @paulrouget <paul@mozilla.com>
+
+    Contributor(s):
+      - Anthony Ricaud <rik24d@gmail.com>
+      - Louis-Rémi Babé <lrbabe@gmail.com>
+
+
+    LICENSE:
+      DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+      Version 2, December 2004
+
+      Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+
+      Everyone is permitted to copy and distribute verbatim or modified
+      copies of this license document, and changing it is allowed as long
+      as the name is changed.
+
+      DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+      TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+      0. You just DO WHAT THE FUCK YOU WANT TO.
+
+
+    -->
+
+    <title>Canvas: Serious Business - Julien Tournay - 2011</title>
+
+        <!--
+        ************************************
+        *                                  *
+        *               CSS                *
+        *                                  *
+        ************************************
+        -->
+
+
+      <style>
+        /*
+        ************************************
+        *    CSS CORE:                     *
+        *    YOU DON'T WANT TO EDIT THIS   *
+        *    (but you can)                 *
+        ************************************
+        */
+
+        html { overflow: hidden; }
+        body, html { height: 100%; padding: 0px; }
+        body { margin: auto; position: relative; }
+        img, video { vertical-align: middle; }
+        /* FIXME : Mandatory for flex box model, Firefox bug */
+        /* See JS hack */
+        section > div { width: 100%; display: -moz-box; -moz-box-orient : vertical; -moz-box-pack : center; -moz-box-align : center; }
+        section > div { width: 100%; display: -webkit-box; -webkit-box-orient : vertical; -webkit-box-pack : center; -webkit-box-align : center; }
+        footer { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; position: absolute; bottom: 0; padding: 1em; width: 100%; }
+        .flex-wrapper { display: -moz-box; display: -webkit-box; -moz-box-orient: horizontal; -webkit-box-orient: horizontal; width: 100%; }
+        footer .flex-space { -moz-box-flex: 1; -webkit-box-flex: 1; }
+        section { -moz-transition-property: -moz-transform, opacity; -moz-transition-duration: 1s, 1s; pointer-events: none; display: block; width: 100%; margin: auto; position: absolute; padding: 0 10px; opacity: 0; -moz-box-sizing: border-box; }
+        section { -webkit-transition-property: -webkit-transform, opacity; -webkit-transition-duration: 1s, 1s; pointer-events: none; -webkit-box-sizing: border-box; }
+        section h1, section h2, section h3, section p { text-align: center; margin: .3em; margin: 0; padding: 0; }
+        section[aria-selected] { opacity: 1; pointer-events: auto; -moz-transition-delay: 1s, 1s; -webkit-transition-delay: 1s, 1s; }
+        pre { border-left: 6px solid white; padding-left: 10px; white-space: pre-wrap;       /* css-3 */ word-wrap: break-word;       /* Internet Explorer 5.5+ */ line-height: 1.3em; } 
+        a { color: white!important; text-decoration: none; }
+
+        /*
+        ************************************
+        *    CSS OPTIONS:                  *
+        *    YOU WANT TO EDIT THIS         *
+        *                                  *
+        ************************************
+        */
+        
+        a {
+          text-decoration: underline;
+        }
+        
+        iframe {
+          overflow: hidden;
+          border: 1px solid black;
+          -moz-box-shadow: 0px 0px 10px black;
+          -webkit-box-shadow: 0px 0px 10px black;
+        }
+        
+        section h1, section h2, section p {
+          margin: 5px 0;
+        }
+        
+        h1, h2, h3 {
+          text-shadow: 1px 1px 3px black;
+        }
+        h1 {
+          font-size: 2.5em;
+          font-weight: bold;
+        }
+        h2 {
+          font-size: 2em;
+          font-weight: bold;
+        }
+        h3 {
+          font-size: 1.5em;
+          font-weight: bold;
+        }
+
+        /* The backgrounds of all your slides */
+        body {
+          background-image: -moz-radial-gradient( 50% 30% 90deg, circle, #444 0%, #111 600px);
+          background-image: -webkit-gradient(radial, 50% 30%, 0, 50% 30%, 600, from(#444), to(#111));
+          background-color: #444;
+        }
+
+
+        /* This is the style of a slide */
+        section {
+          font-family:"Palatino Linotype", "Book Antiqua", Palatino, serif;
+          font-size: 100%;
+          color: white;
+        }
+
+        section {
+          -moz-transform: translate(-100%, 0);
+          -webkit-transform: translate(-100%, 0);
+        }
+        
+        #footer {
+          display: block;
+          color: white;
+          opacity: 0.5;
+          z-index: -1;
+        }
+        
+        section[aria-selected] {
+          -moz-transform: scale(1.0) translate(0, 0);
+          -webkit-transform: scale(1.0) translate(0, 0);
+        }
+
+        section[aria-selected] ~ section {
+          -moz-transform: translate(100%, 0);
+          -webkit-transform: translate(100%, 0);
+        }
+        
+        
+        .exemple {
+          display: table;
+          margin: 20px;
+        }
+        
+        .exemple .demo {
+          display: table-cell;
+          vertical-align: middle;
+          text-align: center;
+          padding: 50px;
+        }
+        .exemple pre {
+          display: table-cell;
+        }
+        
+        #implem {
+          background: url(implem_back.png) center center no-repeat;
+        }
+        
+      </style>
+
+			<style type="text/css" media="screen">
+				pre.code, code{
+					font-family: 'Panic sans';
+					font-weight: normal;
+					font-size: 0.7em;
+				}
+				
+				canvas, .panel{
+					display: block;
+					background: rgba(128, 128, 128, 0.1);
+					-webkit-border-radius: 10px;
+					-webkit-box-shadow: inset -4px -4px 5px rgba(0,0,0, 0.3), inset 4px 4px 5px rgba(0,0,0,0.3);
+					margin-bottom: 15px;
+					border: solid 1px rgba(0, 0, 0, 0.2);
+				}
+				
+				.panel p{
+					text-align: right;
+				}
+				
+				.button{
+					background: -webkit-gradient(linear, left top, left bottom , from(#f9823F), to(#fd6D1A));
+					display: inline-block;
+					padding: 5px 20px 3px 20px;
+					color: #fff;
+					text-decoration: none;
+					-webkit-border-radius: 6px;
+					-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+					text-shadow: 0 -1px 1px rgba(0,0,0,0.5);
+					border-bottom: 1px solid rgba(0,0,0,0.5);
+					position: relative;
+					cursor: pointer;
+					font-size: 0.7em;
+					
+					-webkit-transition: -webkit-box-shadow 0.15s linear;
+				}
+				
+				.button:hover{
+					-webkit-box-shadow: 0 0px 10px #fd6D1A;
+				}
+				
+				.button.delete, .button.reset{
+					width: 50px;
+				}
+				
+				.button.reset{
+					background: -webkit-gradient(linear, left top, left bottom , from(#67C904), to(#4E9900));
+				}
+				
+				.button.delete{
+					background: -webkit-gradient(linear, left top, left bottom , from(#DD0C00), to(#A90000));
+				}
+				
+				strong{
+					color: #f9823F;
+				}
+				
+				label{
+					font-size: 0.7em;
+					margin-right: 10px;
+				}
+			</style>
+			
+			<script src="js/load.js" type="text/javascript"></script>
+			<script src="js/jquery.js" type="text/javascript"></script>
+			<script type="text/javascript" src="js/jquery.flot.js"></script>
+	    <script type="text/javascript" src="js/jquery.flot.crosshair.js"></script>
+    </head>
+		<body>
+        <!--
+        ************************************
+        *                                  *
+        *        HTML: YOUR SLIDES         *
+        *                                  *
+        ************************************
+        -->
+    
+    <section>
+      <div>
+				<h1 style="color: #ff6600;">Canvas: Serious Business</h1>
+			</div>
+    </section>
+
+		<section style="background: url(ecran.gif)">
+			<div>
+				<h3 style="display: block; width: 600px;text-align: center; text-transform: uppercase">
+					Attention: Cette pérsentation n'est pas une pérsentation sur le graphimse
+				</h3>
+				<h4 style="display: block;  width: 600px; text-align: right; text-transform: uppercase">
+					Merci de votre <br /> compréhension
+				</h4>
+			</div>
+    </section>
+    
+		<section>
+     	<div>
+				<h2>Canvas ?</h2>
+			</div>
+    </section>
+
+    <section>
+     	<div>
+				<img src="canevas.png" />
+			</div>
+    </section>
+
+		<section>
+     	<div>
+				<p>
+					<span style="color: #E0BB6E">
+						&lt;canvas id=
+					</span>
+					<span style="color: #60B042">
+						&quot;firstcanvas&quot;
+					</span>
+					<span style="color: #E0BB6E">
+						height=
+					</span>
+					<span style="color: #60B042">
+						&quot;500&quot;
+					</span>	
+					<span style="color: #E0BB6E">
+						width=
+					</span>
+					<span style="color: #60B042">
+						&quot;600&quot;
+					</span>
+					<span style="color: #E0BB6E">
+						&gt;&lt;/canvas&gt;
+					</span>
+					<!-- <canvas id="firstcanvas" height="500" width="600"></canvas> -->
+				</p>
+			</div>
+    </section>
+
+		<section>
+			<div>
+				<canvas id="firstcanvas" style="border-color: #f9823F" height="500" width="600"></canvas>		
+			</div>
+			<script type="text/javascript">
+				document.addEventListener('DOMContentLoaded', function(){
+					var ctx = firstcanvas.getContext('2d');
+					ctx.font = "italic 32px 'Marker Felt'";
+					ctx.fillStyle = "#f9823F";
+					ctx.fillText("This is our first <canvas> !", 150, 240);
+					
+					//draw arrow
+					ctx.strokeStyle = "#f9823F";
+					ctx.lineWidth = 7;
+					ctx.lineCap = "round";
+					
+					function drawArrow(){
+						ctx.beginPath();
+						ctx.moveTo(30, 30);
+					  ctx.bezierCurveTo(60, 50, 60, 70, 60, 100);
+					  ctx.stroke();
+						ctx.closePath();
+
+						ctx.beginPath();
+						ctx.moveTo(30, 30);
+						ctx.bezierCurveTo(25, 25, 35, 40, 30, 50);
+						ctx.stroke();
+						ctx.closePath();
+
+						ctx.beginPath();
+						ctx.moveTo(30, 30);
+						ctx.bezierCurveTo(25, 25, 25, 20, 50, 30);
+						ctx.stroke();
+						ctx.closePath();
+					}
+					
+					ctx.save();
+					ctx.translate(140,70);
+					drawArrow();
+					ctx.translate(350,320);
+					ctx.rotate(Math.PI);
+					drawArrow();
+					ctx.restore();
+					
+				});
+			</script>
+		</section>
+
+		<section>
+			<div>
+				<canvas id="simpleshapes" height="500" width="600"></canvas>
+				<p>
+					<a id="rect" href="#" class="button">Rectangle</a>
+					<a id="path" href="#" class="button">Path</a>
+					<a id="lena" href="#" class="button">Image</a>
+					<a id="txt" href="#" class="button">Text</a>
+				</p>		
+			</div>
+			<script type="text/javascript">
+				var lenaImg = new Image();
+				lenaImg.src = 'lena.jpg';
+				document.addEventListener('DOMContentLoaded', function(){
+					var ctx = simpleshapes.getContext('2d');
+					
+					rect.addEventListener('click', function(e){
+						e.preventDefault();
+						ctx.fillStyle = "#ff0000";
+					 	ctx.fillRect (200, 200, 100, 100);	
+					});
+					
+					path.addEventListener('click', function(e){
+						e.preventDefault();
+						ctx.strokeStyle = "#00ff00";
+						ctx.lineWidth = 10;
+						ctx.lineCap = "round";
+						ctx.beginPath();
+						ctx.moveTo(120, 100);
+					  ctx.bezierCurveTo(130, 60, 400, 100, 370, 400); // <- this is right formula for the image on the right ->
+					  ctx.stroke();	
+						ctx.closePath();
+					});	
+					
+					lena.addEventListener('click', function(e){
+						e.preventDefault();
+					 	ctx.drawImage(lenaImg, 100, 50, 400, 400);	
+					});
+					
+					txt.addEventListener('click', function(e){
+						e.preventDefault();
+						ctx.font = "italic 24px 'Marker Felt'";
+						ctx.fillStyle = "#f9823F";
+						ctx.fillText("Hello Lena :)", 240, 35);
+					});				
+				});
+			</script>
+		</section>
+		
+		<section>
+			<div>
+				<pre class="code" style="font-size: 0.5em">
+<span style="color:#f9823F">//get context</span>					
+var ctx = simpleshapes.getContext(&#x27;2d&#x27;);
+
+<span style="color:#f9823F">//draw a rect</span>
+ctx.fillStyle = &quot;#ff0000&quot;;
+ctx.fillRect (200, 200, 100, 100);	
+
+<span style="color:#f9823F">//draw a path</span>
+ctx.strokeStyle = &quot;#00ff00&quot;;
+ctx.lineWidth = 10;
+ctx.lineCap = &quot;round&quot;;
+ctx.beginPath();
+ctx.moveTo(120, 100);
+ctx.bezierCurveTo(130, 60, 400, 100, 370, 400);
+ctx.stroke();	
+ctx.closePath();
+
+<span style="color:#f9823F">//draw lena</span>
+var lenaImg = new Image();
+lenaImg.src = &#x27;lena.jpg&#x27;;
+ctx.drawImage(lenaImg, 100, 50, 400, 400);	
+
+<span style="color:#f9823F">//write in canvas</span>
+ctx.font = &quot;italic 24px &#x27;Marker Felt&#x27;&quot;;
+ctx.fillStyle = &quot;#f9823F&quot;;
+ctx.fillText(&quot;Hello Lena :)&quot;, 240, 35);
+			</pre>
+			</div>
+		</section>
+    
+		<section>
+     	<div>
+				<div id="c64"></div>
+			</div>
+			<script type="text/javascript" charset="utf-8">
+				document.addEventListener('DOMContentLoaded', function(){
+					LOAD("#c64",8,1)
+					PRINT( "", true )
+					PRINT( "THIS IS LOW LEVEL!", true)
+				});
+			</script>
+    </section>
+
+		<section>
+			<div>
+				<h2>Demos!</h2>
+				<ul>
+					<li>
+						<a href="http://www.airtightinteractive.com/demos/processing_js/noisefield08.html" target="_blank">
+							http://www.airtightinteractive.com/demos/processing_js/noisefield08.html
+						</a>
+					</li>
+					<li>
+						<a href="http://www.hakim.se/experiments/html5/trail/03/" target="_blank">
+							http://www.hakim.se/experiments/html5/trail/03/
+						</a>
+					</li>
+					<li>
+						<a href="http://playbiolab.com/" target="_blank">http://playbiolab.com/</a>
+					</li>
+				</ul>
+			</div>
+    </section>
+
+		<section>
+			<div>
+				<canvas id="fire" style="-webkit-border-radius: 0" height="600" width="800"></canvas>
+			</div>
+			<script src="js/fire.js" type="text/javascript" charset="utf-8"></script>
+			<script type="text/javascript" charset="utf-8">
+			// 				window.addEventListener("popstate", function(e) {
+			// 					if(e.state > 12)
+			// 						fire.parentElement.removeChild(fire);
+			// 				})	
+			</script>
+		</section>
+		
+		<section>
+			<style type="text/css" media="screen">
+				.tickLabels{
+					display: none;
+				}
+			</style>
+			<div>
+				<div id="placeholder" style="width:600px;height:300px"></div>
+			</div>
+			<script type="text/javascript" charset="utf-8">
+				var plot;
+				$(function () {
+				    var sin = [], cos = [];
+				    for (var i = 0; i < 14; i += 0.1) {
+				        sin.push([i, Math.sin(i)]);
+				        cos.push([i, Math.cos(i)]);
+				    }
+
+				    plot = $.plot($("#placeholder"),
+				                      [ { data: sin},
+				                        { data: cos} ], {
+				                            series: {
+				                                lines: { show: true }
+				                            },
+				                            crosshair: { mode: "x" },
+				                            grid: { hoverable: true, autoHighlight: false },
+				                            yaxis: { min: -1.2, max: 1.2 }
+				                        });
+				    var legends = $("#placeholder .legendLabel");
+				    legends.each(function () {
+				        // fix the widths so they don't jump around
+				        $(this).css('width', $(this).width());
+				    });
+
+				    var updateLegendTimeout = null;
+				    var latestPosition = null;
+
+				    function updateLegend() {
+				        updateLegendTimeout = null;
+
+				        var pos = latestPosition;
+
+				        var axes = plot.getAxes();
+				        if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
+				            pos.y < axes.yaxis.min || pos.y > axes.yaxis.max)
+				            return;
+
+				        var i, j, dataset = plot.getData();
+				        for (i = 0; i < dataset.length; ++i) {
+				            var series = dataset[i];
+
+				            // find the nearest points, x-wise
+				            for (j = 0; j < series.data.length; ++j)
+				                if (series.data[j][0] > pos.x)
+				                    break;
+
+				            // now interpolate
+				            var y, p1 = series.data[j - 1], p2 = series.data[j];
+				            if (p1 == null)
+				                y = p2[1];
+				            else if (p2 == null)
+				                y = p1[1];
+				            else
+				                y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
+
+				            legends.eq(i).text(series.label.replace(/=.*/, "= " + y.toFixed(2)));
+				        }
+				    }
+
+				    $("#placeholder").bind("plothover",  function (event, pos, item) {
+				        latestPosition = pos;
+				        if (!updateLegendTimeout)
+				            updateLegendTimeout = setTimeout(updateLegend, 50);
+				    });
+				});
+			</script>
+		</section>
+		
+		<section>
+			<div>
+				<h2>Meet <code>ImageData</code></h2>
+			</div>
+		</section>
+		
+		<section>
+			<div>
+<pre class="code">interface <strong>ImageData</strong> {
+  readonly attribute CanvasPixelArray data;
+  readonly attribute unsigned long height;
+  readonly attribute unsigned long width;
+};
+
+interface <strong>CanvasPixelArray</strong> {
+  readonly attribute unsigned long length;
+  getter octet (in unsigned long index);
+  setter void (in unsigned long index, in octet value);
+};</pre>
+			</div>
+		</section>
+
+		<section>
+			<div>
+<pre class="code">ImageData <strong>createImageData</strong>(in float sw, in float sh);
+
+ImageData <strong>getImageData</strong>(in float sx, in float sy, in float sw, in float sh);
+
+void <strong>putImageData</strong>(in ImageData imagedata, in float dx, in float dy);</pre>
+			</div>
+		</section>	
+		
+		<section>
+			<div>
+				<canvas id="imagedataDemo" width="875" height="450"></canvas>
+				<a id="toGrayscale" href="#" class="button">Shazam!</a>
+			</div>
+			<script type="text/javascript" charset="utf-8">
+				document.addEventListener('DOMContentLoaded', function(){
+					var ctx = imagedataDemo.getContext('2d');
+					
+					toGrayscale.addEventListener('click', function(e){
+						e.preventDefault();
+						
+						var lenaData = ctx.getImageData(25, 25, 400, 400);
+						var oldLena = ctx.createImageData(400, 400);
+
+						for (var pixel = 0; pixel < lenaData.data.length; pixel += 4){
+							oldLena.data[pixel] = oldLena.data[pixel + 1] = oldLena.data[pixel + 2] = (299 * lenaData.data[pixel] + 587 * lenaData.data[pixel + 1] + 114 * lenaData.data[pixel + 2]) / 1000;
+							oldLena.data[pixel + 3] = 255;
+						}
+						
+						ctx.putImageData(oldLena, 450, 25);
+					});
+					
+					lenaImg.addEventListener('load', function(){
+						ctx.drawImage(lenaImg, 25, 25, 400, 400);
+					})
+				})
+			</script>
+		</section>
+		
+		<section>
+			<div>
+				<pre class="code">
+var ctx = imagedataDemo.getContext('2d');
+var lenaData = ctx.getImageData(25, 25, 400, 400);
+var grayLena = ctx.createImageData(400, 400);
+
+kaBoomBoom();
+
+ctx.putImageData(grayLena, 450, 25);</pre>
+			</div>
+		</section>
+		
+		<section>
+			<div>
+				<h3>
+					<span style="font-style: italic">Seam Carving for Content-Aware Image Resizing</span> <br />
+					[Ariel Shamir et al. 2007]
+				</h3>
+			</div>
+		</section>	
+		
+		<section>
+			<div>
+				<img src="ps.png" style="width: 300px"/>
+			</div>
+		</section>
+
+		<section>
+			<div>
+				<h1>Demo!</h1>
+			</div>
+		</section>
+		
+		
+		<!-- ===================== -->
+		<!-- = SEAM CARVING DEMO = -->
+		<!-- ===================== -->
+		<script src="../seam.js" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css" media="screen">
+			#grayCanvas, #sobelCanvas, #energyCanvas{
+				display: none;
+				background: red;
+			}
+			
+			input[type="range"]{
+				width: 200px;
+				display: inline-block;
+			}
+			
+			#seamCanvas{
+				margin-top: 20px;
+			}
+			
+			#container{
+				position:relative;
+				display:block;
+				height: 200px;
+				width: 300px;
+			}
+			
+			#container canvas{
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				margin: 0;
+			}
+			
+			#drawCanvas{
+				opacity:0.5;
+				cursor:pointer;
+			}
+			
+			.loading{
+				position: relative;
+			}
+			
+			.loading *{
+				opacity: 0.5;
+			}
+			
+			.loading:before{
+				content: url(loader.gif);
+				position: absolute;
+				top: 55px;
+				left: 90px;
+			}	
+		</style>
+		
+		
+		<section>
+			<div>
+				<div style="width: 900px">
+					
+					<div style="width: 200px; overflow: auto; float: right; padding: 15px" id="seampanel" class="panel">
+						<p><input id="nbseams" type="range" min="-200" max="200" step="1" value="0" /></p>
+						<p>
+							<label>del. <input type="checkbox" name="red" value="" id="redMark"></label>
+							<a href="#" id="deletebtn" class="button delete">delete!</a>
+						</p>
+						<p>
+							<a href="#" id="resetbtn" class="button reset">reset!</a>
+						</p>
+					</div>
+
+					<div style="width: 665px; overflow: auto">
+						<div id="container">
+							<canvas id="orgCanvas" width="300" height="200"></canvas>
+							<canvas id="drawCanvas" width="300" height="200"></canvas>
+						</div>
+
+						<canvas id="grayCanvas" width="300" height="200"></canvas>
+						<canvas id="sobelCanvas" width="300" height="200"></canvas>
+						<canvas id="energyCanvas" width="300" height="200"></canvas>
+						<canvas id="seamCanvas" width="300" height="200"></canvas>
+					</div>
+				</div>
+			</div>
+			<script src="seamdemo.js" type="text/javascript" charset="utf-8"></script>
+		</section>
+
+
+
+
+
+
+
+
+
+
+
+    <script type="text/javascript">
+
+      /*
+      ************************************
+      *                                  *
+      *            JAVASCRIPT            *
+      *  (You don't have to read this)   *
+      ************************************
+      */
+
+      function init() {
+        var firstFrame = window.location.hash? parseInt(window.location.hash.split("#")[1], 10) : 1;
+        var title = document.querySelector("title").textContent;
+        var slides = document.querySelectorAll("body > section");
+        for (var i = 1, il = slides.length; i <= il; i++) {
+          // FIXME : Mandatory for flex box model for vertical align
+          // Firefox bug :(
+          //slides[i - 1].innerHTML = "<div>" + slides[i - 1].innerHTML + "</div>";
+          window.history[(i == 1? 'replace' : 'push') + 'State'](i, title + " ("+ i +"/"+ il +")", "#"+i);
+        }
+
+        var footer = document.createElement("footer");
+        footer.id = "footer";
+        footer.innerHTML = 
+          '<div class="flex-wrapper"><p>' + title + '</p>' +
+          '<p class="flex-space"></p>' + 
+          '<p id="index"><span class="pagenumber"></span> / ' + il +'</p>';
+        document.body.appendChild(footer);
+        history.go(- slides.length + firstFrame);
+
+
+        window.addEventListener("popstate", function(e) {
+          if(e.state) {
+            var old = document.querySelector("section[aria-selected]");
+            var next = document.querySelector("section:nth-of-type("+ e.state +")");
+
+            if (old) {
+              old.removeAttribute("aria-selected");
+              if (old.hasAttribute("data-onunload")) {
+                window[old.getAttribute("data-onunload")].call(window, old);
+              }
+            }
+
+            if (next) {
+              next.setAttribute("aria-selected", "true");
+              if (next.hasAttribute("data-onload")) {
+                window[next.getAttribute("data-onload")].call(window, next);
+              }
+            }
+
+
+            var index = document.querySelector("#index .pagenumber");
+            index.innerHTML = e.state;
+          }
+        }, true); 
+      }
+
+      function resize() {
+        var style = document.getElementById("resizeStyle");
+        if (!style) {
+          style = document.createElement("style");
+          style.id = "resizeStyle";
+          document.head.appendChild(style);
+        }
+        var fontSize = Math.floor(window.innerWidth/40);
+        style.textContent = "body>section>div {height: "+ window.innerHeight +"px} body>section { font-size: "+fontSize+"px; }";
+      }
+
+      window.addEventListener("resize", resize, true);
+      window.addEventListener("load", resize, true);
+      window.addEventListener("load", init, true);
+
+      // Webkit bug
+      // window.addEventListener("hashchange", init, true); // FIXME Webkit fires hashchange when it shouldn't
+      window.addEventListener("keydown", function(e) {
+        // Don't intercept keyboard shortcuts
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+          return;
+        }
+        if (   e.keyCode == 80 // p
+            || e.keyCode == 66 // b
+            || e.keyCode == 37 // left arrow
+            || e.keyCode == 33 // page up
+        ) {
+          e.preventDefault();
+          history.back();
+        }
+        if (   e.keyCode == 78 // n
+            || e.keyCode == 32 // space
+            || e.keyCode == 39 // right arrow
+            || e.keyCode == 34 // page down
+        ) {
+          e.preventDefault();
+          history.forward();
+        }
+      }, true);
+    </script>
+  </body>
+</html>

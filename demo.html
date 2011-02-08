@@ -64,11 +64,10 @@
 		<script type="text/javascript" charset="utf-8">
 			(function(){
 				var USE_WORKER = true;
-				
+
 				var worker = new Worker('worker.js');
-				
+
 				document.addEventListener('DOMContentLoaded', function(){
-					
 					var orgCtx = orgCanvas.getContext('2d');
 					var grayCtx = grayCanvas.getContext('2d');
 					var sobelCtx = sobelCanvas.getContext('2d');
@@ -82,7 +81,8 @@
 					//originalImage.src = "images/people.jpg";
 					//originalImage.src = "images/forest.jpg";
 					originalImage.src = "images/desert.jpg";
-										
+					//originalImage.src = "images/dolphin.jpg";
+															
 					//Seam carving function
 					originalImage.addEventListener('load', function(){					
 						container.style.height = this.height + "px";
@@ -130,7 +130,9 @@
 							var out = seamCtx.createImageData(img.width + slices, img.height);
 							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
 							
-							if(USE_WORKER){							
+							if(USE_WORKER){
+								var start = new Date().getTime();
+															
 								worker.onmessage = function(event){
 									var res = event.data;
 									for(var i = 0; i < out.data.length; i++)
@@ -140,6 +142,9 @@
 									seamCtx.putImageData(out, 0,0);
 									orgCanvas.style.width = img.width + slices + "px";
 									drawCanvas.style.width = img.width + slices + "px";
+									
+									var end = new Date().getTime();
+									console.log("finished: %ss", (end - start) / 1000);
 								}
 							
 								// ImageData are considered DOM elements, we can't use them in WebWorker
@@ -151,6 +156,8 @@
 								worker.postMessage({'f': 'resize', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
 							}
 							else{
+								var start = new Date().getTime();
+								
 								var s = new SeamCarving(imageData, masks, out);						
 								s.resize();
 													
@@ -161,6 +168,9 @@
 							
 								orgCanvas.style.width = img.width + slices + "px";
 								drawCanvas.style.width = img.width + slices + "px";
+								
+								var end = new Date().getTime();
+								console.log("finished: %ss", (end - start) / 1000);
 							}
 						});
 						
@@ -170,13 +180,17 @@
 							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
 							var masks = drawCtx.getImageData(0,0, img.width, img.height);
 							
-							if(USE_WORKER){				
+							if(USE_WORKER){	
+								var start = new Date().getTime();			
 								worker.onmessage = function(event){
 									var res = event.data;
 									for(var i = 0; i < out.data.length; i++)
 										out.data[i] = res.data[i];
 									
 									seamCtx.putImageData(out, 0,0);
+									
+									var end = new Date().getTime();
+									console.log("finished: %ss", (end - start) / 1000);
 								}
 							
 								var coincoinIN = {'data': imageData.data, 'width': imageData.width, 'height': imageData.height};
@@ -185,6 +199,7 @@
 								worker.postMessage({'f': 'erase', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
 							}
 							else{
+								var start = new Date().getTime();			
 								var s = new SeamCarving(imageData, masks, out);
 								s.erase();
 							
@@ -194,6 +209,9 @@
 								energyCtx.putImageData(s.debug(d, 1), 0,0);
 							
 								seamCtx.putImageData(s.out, 0,0);
+								
+								var end = new Date().getTime();
+								console.log("finished: %ss", (end - start) / 1000);
 							}
 						});
 					});
