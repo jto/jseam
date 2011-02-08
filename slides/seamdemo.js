@@ -68,12 +68,13 @@
 				nbseams.addEventListener('change', function(){
 					var slices = this.value * 1; //workaround weird safari bug
 					//var slices = -1;
-					seamCanvas.width = img.width + slices;
+					var width = seamCanvas.width;
+					seamCanvas.width =	width + slices;
 					
-					var imageData = orgCtx.getImageData(0,0, img.width, img.height); //considered DOM...
-					var masks = drawCtx.getImageData(0,0, img.width, img.height);
-					var out = seamCtx.createImageData(img.width + slices, img.height);
-					var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
+					var imageData = orgCtx.getImageData(0,0, width, seamCanvas.height); //considered DOM...
+					var masks = drawCtx.getImageData(0,0, width, seamCanvas.height);
+					var out = seamCtx.createImageData(width + slices, seamCanvas.height);
+					var d = seamCtx.createImageData(width + (slices > 0 ? (0) : slices + 1), seamCanvas.height);
 					
 					if(USE_WORKER){
 						var start = new Date().getTime();
@@ -87,8 +88,8 @@
 							
 							//copy result in imageData
 							seamCtx.putImageData(out, 0,0);
-							orgCanvas.style.width = img.width + slices + "px";
-							drawCanvas.style.width = img.width + slices + "px";
+							orgCanvas.style.width = width + slices + "px";
+							drawCanvas.style.width = width + slices + "px";
 							
 							seampanel.className = "panel";
 							
@@ -117,8 +118,8 @@
 						energyCtx.putImageData(s.debug(d, 1), 0,0);
 						seamCtx.putImageData(s.out, 0,0);
 					
-						orgCanvas.style.width = img.width + slices + "px";
-						drawCanvas.style.width = img.width + slices + "px";
+						orgCanvas.style.width = width + slices + "px";
+						drawCanvas.style.width = width + slices + "px";
 						
 						seampanel.className = "panel";
 						
@@ -129,9 +130,12 @@
 				
 				//delete selection
 				deletebtn.addEventListener('click', function(){
-					var out = seamCtx.createImageData(img.width, img.height);
-					var imageData = orgCtx.getImageData(0,0, img.width, img.height);
-					var masks = drawCtx.getImageData(0,0, img.width, img.height);
+					
+					var width = seamCanvas.width;
+					
+					var out = seamCtx.createImageData(width, img.height);
+					var imageData = orgCtx.getImageData(0,0, width, img.height);
+					var masks = drawCtx.getImageData(0,0, width, img.height);
 					
 					if(USE_WORKER){	
 						var start = new Date().getTime();	
@@ -164,7 +168,7 @@
 						var s = new SeamCarving(imageData, masks, out);
 						s.erase();
 					
-						var d = seamCtx.createImageData(img.width, img.height);
+						var d = seamCtx.createImageData(width, height);
 						grayCtx.putImageData(s.debug(d, 0), 0,0);
 						sobelCtx.putImageData(s.debug(d, 2), 0,0);
 						energyCtx.putImageData(s.debug(d, 1), 0,0);

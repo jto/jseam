@@ -746,6 +746,45 @@ ctx.putImageData(grayLena, 450, 25);</pre>
 						<canvas id="seamCanvas" width="300" height="200"></canvas>
 					</div>
 				</div>
+				<script type="text/javascript" charset="utf-8">
+					document.addEventListener('DOMContentLoaded', function(){
+						function cancel(e){
+							e.preventDefault();
+						}
+						
+						container.addEventListener('dragover',cancel);
+						container.addEventListener('dragenter',cancel);
+						
+						container.addEventListener('drop', function(e){
+							e.preventDefault();
+							
+								var orgCtx = orgCanvas.getContext('2d');
+								var seamCtx = seamCanvas.getContext('2d');
+								var drawCtx = drawCanvas.getContext('2d');
+							
+							var file = event.dataTransfer.files[0];
+
+							var img = new Image();
+							img.src = 'examples/' + file.fileName;
+							
+							img.addEventListener('load', function(){
+								container.style.height = this.height + "px";
+								container.style.width = this.width + "px";
+								drawCanvas.height = sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
+								drawCanvas.width = sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;
+
+								orgCtx.drawImage(this, 0,0);
+								seamCtx.drawImage(this, 0,0);
+
+								drawCtx.clearRect(0,0,this.width, this.height);
+
+								orgCanvas.style.width = this.width + "px";
+								drawCanvas.style.width = this.width + "px";
+							})
+							
+						});
+					})
+				</script>
 			</div>
 			<script src="seamdemo.js" type="text/javascript" charset="utf-8"></script>
 		</section>
