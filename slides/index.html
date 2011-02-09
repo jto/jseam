@@ -102,17 +102,21 @@
           text-shadow: 1px 1px 3px black;
         }
         h1 {
-          font-size: 2.5em;
+          font-size: 2.1em;
           font-weight: bold;
         }
         h2 {
-          font-size: 2em;
+          font-size: 1.8em;
           font-weight: bold;
         }
         h3 {
-          font-size: 1.5em;
+          font-size: 1.4em;
           font-weight: bold;
         }
+
+				h4 {
+          font-size: 1.1em;
+				}
 
         /* The backgrounds of all your slides */
         body {
@@ -121,10 +125,13 @@
           background-color: #444;
         }
 
-
+				body>section{
+					font-size: 30px;
+				}
+				
         /* This is the style of a slide */
         section {
-          font-family:"Palatino Linotype", "Book Antiqua", Palatino, serif;
+          font-family:"Monaco", "Palatino Linotype", "Book Antiqua", Palatino, serif;
           font-size: 100%;
           color: white;
         }
@@ -175,7 +182,7 @@
 
 			<style type="text/css" media="screen">
 				pre.code, code{
-					font-family: 'Panic sans';
+					font-family: 'Panic sans' !important;
 					font-weight: normal;
 					font-size: 0.7em;
 				}
@@ -205,8 +212,8 @@
 					border-bottom: 1px solid rgba(0,0,0,0.5);
 					position: relative;
 					cursor: pointer;
-					font-size: 0.7em;
-					
+					font-size: 0.5em;
+					text-align: center;
 					-webkit-transition: -webkit-box-shadow 0.15s linear;
 				}
 				
@@ -277,7 +284,7 @@
 					Attention: Cette pérsentation n'est pas une pérsentation sur le graphimse
 				</h3>
 				<h4 style="display: block;  width: 600px; text-align: right; text-transform: uppercase">
-					Merci de votre <br /> compréhension
+					Merci de votre<br />compréhension
 				</h4>
 			</div>
     </section>
@@ -937,7 +944,7 @@ ctx.putImageData(grayLena, 450, 25);</pre>
           document.head.appendChild(style);
         }
         var fontSize = Math.floor(window.innerWidth/40);
-        style.textContent = "body>section>div {height: "+ window.innerHeight +"px} body>section { font-size: "+fontSize+"px; }";
+        style.textContent = "body>section>div {height: "+ window.innerHeight +"px} /*body>section { font-size: "+fontSize+"px; }*/";
       }
 
       window.addEventListener("resize", resize, true);
