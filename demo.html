@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>JS Seam carving</title>
+		<script src="seam.js" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css" media="screen">
+			html, body{
+				background: white;
+			}
+			
+			canvas{
+				border: solid 1px #515151;
+				margin: 20px;
+				display: block;
+				background: transparent;
+			}
+			
+			#grayCanvas, #sobelCanvas, #energyCanvas{
+				display: none;
+				background: red;
+			}
+			
+			input[type="range"]{
+				width: 300px;
+				margin: 20px;
+				display: block;
+			}
+			
+			#container{
+				position:relative;
+				margin: 20px;
+			}
+			
+			#container canvas{
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				margin: 0;
+			}
+			
+			#drawCanvas{
+				opacity:0.5;
+				cursor:pointer;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<input id="nbseams" type="range" min="-200" max="200" step="1" value="0" />
+		<input type="button" name="delete" value="delete selected" id="deletebtn" />
+		
+		<label>Red: <input type="checkbox" name="red" value="" id="redMark"></label>
+		
+		<div id="container">
+			<canvas id="orgCanvas" width="500" height="500"></canvas>
+			<canvas id="drawCanvas" width="500" height="500"></canvas>
+		</div>
+		<canvas id="grayCanvas" width="500" height="500"></canvas>
+		<canvas id="sobelCanvas" width="500" height="500"></canvas>
+		<canvas id="energyCanvas" width="500" height="500"></canvas>
+		<canvas id="seamCanvas" width="500" height="500"></canvas>
+		
+		<script type="text/javascript" charset="utf-8">
+			(function(){
+				var USE_WORKER = true;
+
+				var worker = new Worker('worker.js');
+
+				document.addEventListener('DOMContentLoaded', function(){
+					var orgCtx = orgCanvas.getContext('2d');
+					var grayCtx = grayCanvas.getContext('2d');
+					var sobelCtx = sobelCanvas.getContext('2d');
+					var energyCtx = energyCanvas.getContext('2d');
+					var seamCtx = seamCanvas.getContext('2d');
+					var drawCtx = drawCanvas.getContext('2d');
+					
+					var originalImage = new Image();
+										
+					//originalImage.src = "images/fusee.gif";
+					//originalImage.src = "images/people.jpg";
+					//originalImage.src = "images/forest.jpg";
+					originalImage.src = "images/desert.jpg";
+					//originalImage.src = "images/dolphin.jpg";
+															
+					//Seam carving function
+					originalImage.addEventListener('load', function(){					
+						container.style.height = this.height + "px";
+						container.style.width = this.width + "px";
+						drawCanvas.height = sobelCanvas.height = grayCanvas.height = energyCanvas.height = seamCanvas.height = orgCanvas.height = this.height;
+						drawCanvas.width = sobelCanvas.width = grayCanvas.width = energyCanvas.width = seamCanvas.width = orgCanvas.width = this.width;
+						
+						orgCtx.drawImage(this, 0,0);
+						seamCtx.drawImage(this, 0,0);
+						
+						drawCtx.clearRect(0,0,this.width, this.height)
+						drawCtx.setFillColor("#00FF00")
+						
+						redMark.addEventListener('change', function(){
+							if(this.checked)
+								drawCtx.setFillColor("#FF0000")
+							else
+								drawCtx.setFillColor("#00FF00")
+						})
+						
+						// Mask markers
+						var onmove = function(e){
+							var x = e.clientX - container.offsetLeft + document.body.scrollLeft;
+							var y = e.clientY - container.offsetTop + document.body.scrollTop;
+							//console.log("x: " + x + " y: " + y);
+							var s = 15;
+							drawCtx.beginPath();
+							drawCtx.arc(x, y, s, 0, Math.PI * 2, true); 
+							drawCtx.closePath();
+							drawCtx.fill();
+						}
+						drawCanvas.addEventListener('mousedown', function(e){ drawCanvas.addEventListener('mousemove', onmove); });
+						drawCanvas.addEventListener('mouseup', function(e){ drawCanvas.removeEventListener('mousemove', onmove); });
+						
+						var img = this;
+						
+						//resize
+						nbseams.addEventListener('change', function(){
+							var slices = this.value * 1; //workaround weird safari bug
+							//var slices = -1;
+							seamCanvas.width = img.width + slices;
+							
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height); //considered DOM...
+							var masks = drawCtx.getImageData(0,0, img.width, img.height);
+							var out = seamCtx.createImageData(img.width + slices, img.height);
+							var d = seamCtx.createImageData(img.width + (slices > 0 ? (0) : slices + 1), img.height);
+							
+							if(USE_WORKER){
+								var start = new Date().getTime();
+															
+								worker.onmessage = function(event){
+									var res = event.data;
+									for(var i = 0; i < out.data.length; i++)
+										out.data[i] = res.data[i];
+									
+									//copy result in imageData
+									seamCtx.putImageData(out, 0,0);
+									orgCanvas.style.width = img.width + slices + "px";
+									drawCanvas.style.width = img.width + slices + "px";
+									
+									var end = new Date().getTime();
+									console.log("finished: %ss", (end - start) / 1000);
+								}
+							
+								// ImageData are considered DOM elements, we can't use them in WebWorker
+								// We create a ImageData like object
+								var coincoinIN = {'data': imageData.data, 'width': imageData.width, 'height': imageData.height};
+								var coincoinOUT = {'data': out.data, 'width': out.width, 'height': out.height};
+								var coicoinMASKS = {'data': masks.data, 'width': masks.width, 'height': masks.height};
+							
+								worker.postMessage({'f': 'resize', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
+							}
+							else{
+								var start = new Date().getTime();
+								
+								var s = new SeamCarving(imageData, masks, out);						
+								s.resize();
+													
+								grayCtx.putImageData(s.debug(d, 0), 0,0);
+								sobelCtx.putImageData(s.debug(d, 2), 0,0);
+								energyCtx.putImageData(s.debug(d, 1), 0,0);
+								seamCtx.putImageData(s.out, 0,0);
+							
+								orgCanvas.style.width = img.width + slices + "px";
+								drawCanvas.style.width = img.width + slices + "px";
+								
+								var end = new Date().getTime();
+								console.log("finished: %ss", (end - start) / 1000);
+							}
+						});
+						
+						//delete selection
+						deletebtn.addEventListener('click', function(){
+							var out = seamCtx.createImageData(img.width, img.height);
+							var imageData = orgCtx.getImageData(0,0, img.width, img.height);
+							var masks = drawCtx.getImageData(0,0, img.width, img.height);
+							
+							if(USE_WORKER){	
+								var start = new Date().getTime();			
+								worker.onmessage = function(event){
+									var res = event.data;
+									for(var i = 0; i < out.data.length; i++)
+										out.data[i] = res.data[i];
+									
+									seamCtx.putImageData(out, 0,0);
+									
+									var end = new Date().getTime();
+									console.log("finished: %ss", (end - start) / 1000);
+								}
+							
+								var coincoinIN = {'data': imageData.data, 'width': imageData.width, 'height': imageData.height};
+								var coincoinOUT = {'data': out.data, 'width': out.width, 'height': out.height};
+								var coicoinMASKS = {'data': masks.data, 'width': masks.width, 'height': masks.height};
+								worker.postMessage({'f': 'erase', 'imageData': coincoinIN, 'masks': coicoinMASKS, 'out':coincoinOUT});
+							}
+							else{
+								var start = new Date().getTime();			
+								var s = new SeamCarving(imageData, masks, out);
+								s.erase();
+							
+								var d = seamCtx.createImageData(img.width, img.height);
+								grayCtx.putImageData(s.debug(d, 0), 0,0);
+								sobelCtx.putImageData(s.debug(d, 2), 0,0);
+								energyCtx.putImageData(s.debug(d, 1), 0,0);
+							
+								seamCtx.putImageData(s.out, 0,0);
+								
+								var end = new Date().getTime();
+								console.log("finished: %ss", (end - start) / 1000);
+							}
+						});
+					});
+				});
+			})()
+		</script>
+	</body>
+</html>
